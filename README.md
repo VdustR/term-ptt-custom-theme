@@ -1,4 +1,4 @@
-# term-ptt-custom-theme
+# PTT Custom Theme
 
 A [Tampermonkey](https://www.tampermonkey.net/) / [Greasemonkey](https://www.greasespot.net/) stylesheet and guide to customize [term.ptt.cc](https://term.ptt.cc/) .
 
