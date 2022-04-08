@@ -24,9 +24,9 @@ Create a script and insert the script:
   }
   function setColor(color) {
     const style = document.createElement("style");
-    style.innerText = `:root {${Object.entries(color).map(
-      ([key, value]) => `--term-color-${key}: ${value};`
-    )}}`.replace(/[\s\n]/g, "");
+    style.innerText = `:root {${Object.entries(color)
+      .map(([key, value]) => `--term-color-${key}: ${value};`)
+      .join("")}}`.replace(/[\s\n]/g, "");
     document.body.appendChild(style);
   }
   addCss("https://cdn.jsdelivr.net/gh/vdustr/term-ptt-custom-theme/color.css");
@@ -61,6 +61,61 @@ Create a script and insert the script:
 > Color Schemes For Ubuntu, Linux Mint, Elementary OS and all distributions that use Gnome Terminal, Pantheon Terminal, Tilix, or XFCE4 Terminal; initially inspired by Elementary OS Luna. Also works on iTerm for macOS.
 
 - <https://mayccoll.github.io/Gogh/>
+
+```js
+// ==UserScript==
+// @name         PTT Gogh Themes
+// @description  https://github.com/VdustR/term-ptt-custom-theme
+// @version      0.0.0
+// @match        https://term.ptt.cc
+// ==/UserScript==
+
+(async function () {
+  "use strict";
+  function addCss(href) {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "stylesheet");
+    link.setAttribute("href", href);
+    document.body.appendChild(link);
+  }
+  function setColor(color) {
+    const style = document.createElement("style");
+    style.innerText = `:root {${Object.entries(color)
+      .map(([key, value]) => `--term-color-${key}: ${value};`)
+      .join("")}}`.replace(/[\s\n]/g, "");
+    document.body.appendChild(style);
+  }
+  async function setGoghTheme(themeName) {
+    const { themes } = await (
+      await fetch("https://cdn.jsdelivr.net/gh/Mayccoll/Gogh/data/themes.json")
+    ).json();
+    const theme = themes.find(({ name }) => name === themeName);
+    if (!theme) throw new Error(`Theme ${themeName} not found`);
+    setColor({
+      // black: theme.background,
+      black: theme.black,
+      maroon: theme.red,
+      green: theme.green,
+      olive: theme.yellow,
+      navy: theme.blue,
+      purple: theme.purple,
+      teal: theme.cyan,
+      silver: theme.white,
+      grey: theme.brightBlack,
+      red: theme.brightRed,
+      "0f0": theme.brightGreen,
+      ff0: theme.brightYellow,
+      "00f": theme.brightBlue,
+      f0f: theme.brightPurple,
+      "0ff": theme.brightCyan,
+      fff: theme.brightWhite,
+    });
+  }
+  addCss("https://cdn.jsdelivr.net/gh/vdustr/term-ptt-custom-theme/color.css");
+  // Replace with the theme name you want
+  await setGoghTheme("Grape");
+})();
+```
 
 ### Themes Based on term-ptt-custom-theme
 
