@@ -2,6 +2,10 @@
 
 A [Tampermonkey](https://www.tampermonkey.net/) / [Greasemonkey](https://www.greasespot.net/) stylesheet and guide to customize [term.ptt.cc](https://term.ptt.cc/) .
 
+Sample with Goph Graph Theme + [jf open 粉圓](https://github.com/justfont/open-huninn-font):
+
+![term-ptt-retro-theme](https://vdustr.dev/asset-2022/04-08-term-ptt-custom-theme/graph.png)
+
 ## Usage
 
 Create a script and insert the script:
