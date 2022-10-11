@@ -15,7 +15,7 @@ Create a script and insert the script:
 // @name         PTT Custom Theme
 // @description  https://github.com/VdustR/term-ptt-custom-theme
 // @version      0.0.0
-// @match        https://term.ptt.cc
+// @match        https://term.ptt.cc/
 // ==/UserScript==
 
 (function () {
@@ -71,7 +71,7 @@ Create a script and insert the script:
 // @name         PTT Gogh Themes
 // @description  https://github.com/VdustR/term-ptt-custom-theme
 // @version      0.0.0
-// @match        https://term.ptt.cc
+// @match        https://term.ptt.cc/
 // ==/UserScript==
 
 (async function () {
