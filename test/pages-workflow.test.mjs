@@ -29,7 +29,12 @@ test("extension popup browses colors and fonts inside the extension", async () =
   assert.match(popupJs, /selectedFont/);
   assert.match(popupJs, /preview-colors/);
   assert.match(popupJs, /preview-font/);
+  assert.match(popupJs, /applyButton\.disabled = true;/);
   assert.match(popupJs, /chrome\.storage\.sync\.set\(\{ selectedColors: storedPreset, selectedFont: storedFont \}\)/);
+  assert.match(popupJs, /savedPreset = selectedPreset;/);
+  assert.match(popupJs, /savedFont = selectedFont;/);
+  assert.match(popupJs, /findPreset\(savedPreset\.id\) \?\? savedPreset/);
+  assert.match(popupJs, /findFont\(savedFont\.id\) \?\? savedFont/);
   assert.doesNotMatch(popupJs, /\.slice\(0,\s*100\)/);
 });
 

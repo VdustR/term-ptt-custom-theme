@@ -124,6 +124,8 @@ async function applySelectedPreset() {
     return;
   }
 
+  applyButton.disabled = true;
+
   const storedPreset = {
     id: selectedPreset.id,
     name: selectedPreset.name,
@@ -131,9 +133,16 @@ async function applySelectedPreset() {
   };
   const storedFont = toStoredFont(selectedFont);
 
-  await chrome.storage.sync.set({ selectedColors: storedPreset, selectedFont: storedFont });
-  savedPreset = storedPreset;
-  savedFont = storedFont;
+  try {
+    await chrome.storage.sync.set({ selectedColors: storedPreset, selectedFont: storedFont });
+  } catch {
+    statusNode.textContent = "Could not save appearance.";
+    updateApplyButton();
+    return;
+  }
+
+  savedPreset = selectedPreset;
+  savedFont = selectedFont;
   updateFontStatus();
   updateApplyButton();
   statusNode.textContent = `Applied ${selectedPreset.name} with ${selectedFont.name}`;
@@ -142,8 +151,8 @@ async function applySelectedPreset() {
 }
 
 async function resetPreview() {
-  selectedPreset = savedPreset ? findPreset(savedPreset.id) : registry[0];
-  selectedFont = (savedFont ? findFont(savedFont.id) : null) ?? fontRegistry[0];
+  selectedPreset = savedPreset ? (findPreset(savedPreset.id) ?? savedPreset) : registry[0];
+  selectedFont = (savedFont ? (findFont(savedFont.id) ?? savedFont) : null) ?? fontRegistry[0];
   updateApplyButton();
   renderFonts();
   renderColors();
