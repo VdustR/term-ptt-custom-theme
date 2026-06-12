@@ -1,0 +1,19 @@
+{
+  "name": "term-ptt-custom-theme",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.2.2",
+  "type": "module",
+  "scripts": {
+    "import:colors": "node scripts/import-iterm2-colors.mjs",
+    "build:icons": "node scripts/generate-extension-icons.mjs",
+    "build:assets": "node scripts/build-assets.mjs",
+    "build:store-assets": "node scripts/generate-store-assets.mjs",
+    "build": "pnpm import:colors && pnpm build:icons && pnpm build:assets && pnpm build:store-assets",
+    "package:extension": "node scripts/package-extension.mjs",
+    "verify:package": "node scripts/verify-extension-package.mjs",
+    "preflight:release": "node scripts/preflight-release.mjs",
+    "test": "node --test",
+    "verify": "pnpm build && pnpm test && pnpm package:extension && pnpm verify:package && pnpm preflight:release"
+  }
+}

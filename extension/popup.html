@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Term PTT Custom Theme</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="header">
+        <div>
+          <h1>Term PTT Custom Theme</h1>
+          <p id="status">Loading colors and fonts...</p>
+        </div>
+      </header>
+
+      <section id="controls" class="controls" hidden>
+        <label class="search">
+          <span>Search</span>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Gruvbox, Solarized, Dracula">
+        </label>
+
+        <label class="font-field">
+          <span>Font</span>
+          <select id="fontSelect"></select>
+          <small id="fontStatus">Loading fonts...</small>
+        </label>
+
+        <div id="colorList" class="color-list" aria-label="Color presets"></div>
+
+        <footer class="actions">
+          <button id="resetButton" type="button">Reset</button>
+          <button id="applyButton" type="button" disabled>Apply</button>
+        </footer>
+      </section>
+    </main>
+    <script src="ptt-colors.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

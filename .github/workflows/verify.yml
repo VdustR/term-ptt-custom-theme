@@ -1,0 +1,62 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Checkout iTerm2 color schemes
+        uses: actions/checkout@v4
+        with:
+          repository: mbadolato/iTerm2-Color-Schemes
+          path: vendor/iTerm2-Color-Schemes
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify extension
+        run: pnpm verify
+        env:
+          ITERM2_COLOR_SCHEMES_DIR: vendor/iTerm2-Color-Schemes/windowsterminal
+
+      - name: Upload extension package
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension-package
+          path: dist/term-ptt-custom-theme.zip
+          if-no-files-found: error
+
+      - name: Upload Chrome Web Store assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-web-store-assets
+          path: |
+            store-assets/small-promo-440x280.png
+            store-assets/screenshots/01-custom-theme.png
+            store-assets/screenshots/02-retro-theme.png
+          if-no-files-found: error

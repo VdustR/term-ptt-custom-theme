@@ -1,18 +1,18 @@
-# PTT Custom Theme
+# Term PTT Custom Theme
 
-A [Tampermonkey](https://www.tampermonkey.net/) / [Greasemonkey](https://www.greasespot.net/) stylesheet and guide to customize [term.ptt.cc](https://term.ptt.cc/) .
+A Chrome extension and [Tampermonkey](https://www.tampermonkey.net/) / [Greasemonkey](https://www.greasespot.net/) stylesheet guide to customize [term.ptt.cc](https://term.ptt.cc/).
 
 Sample with Goph Graph Theme + [jf open 粉圓](https://github.com/justfont/open-huninn-font):
 
-![term-ptt-retro-theme](https://vdustr.dev/asset-2022/04-08-term-ptt-custom-theme/graph.png)
+![term-ptt-custom-theme](https://vdustr.dev/asset-2022/04-08-term-ptt-custom-theme/graph.png)
 
-## Usage
+## Userscript Usage
 
 Create a script and insert the script:
 
 ```js
 // ==UserScript==
-// @name         PTT Custom Theme
+// @name         Term PTT Custom Theme
 // @description  https://github.com/VdustR/term-ptt-custom-theme
 // @version      0.0.0
 // @match        https://term.ptt.cc/
@@ -64,7 +64,7 @@ Create a script and insert the script:
 >
 > Color Schemes For Ubuntu, Linux Mint, Elementary OS and all distributions that use Gnome Terminal, Pantheon Terminal, Tilix, or XFCE4 Terminal; initially inspired by Elementary OS Luna. Also works on iTerm for macOS.
 
-- <https://mayccoll.github.io/Gogh/>
+- [Gogh](https://mayccoll.github.io/Gogh/)
 
 ```js
 // ==UserScript==
@@ -124,6 +124,87 @@ Create a script and insert the script:
 ### Themes Based on term-ptt-custom-theme
 
 - [Retro](https://github.com/VdustR/term-ptt-retro-theme)
+
+## Chrome Extension
+
+This repository includes a Manifest V3 extension for terminal colors and font preferences on `term.ptt.cc`.
+
+### Colors Registry
+
+The generated colors registry is based on [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes).
+Third-party source notices are tracked in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+Clone that repository next to this repository:
+
+```bash
+git clone https://github.com/mbadolato/iTerm2-Color-Schemes.git ../iTerm2-Color-Schemes
+```
+
+Generate the normalized PTT colors registry:
+
+```bash
+pnpm import:colors
+```
+
+By default, the importer reads `../iTerm2-Color-Schemes/windowsterminal`. Override the source directory with:
+
+```bash
+ITERM2_COLOR_SCHEMES_DIR=vendor/iTerm2-Color-Schemes/windowsterminal pnpm import:colors
+```
+
+The generated registry is written to `data/colors.json` and copied into extension assets by:
+
+```bash
+pnpm build
+```
+
+Run the full local verification gate:
+
+```bash
+pnpm verify
+```
+
+Run only the release artifact preflight after packaging:
+
+```bash
+pnpm preflight:release
+```
+
+The packaging step requires the system `zip` command. On macOS and Linux this is
+usually available by default; on Windows, run the package step from WSL, Git Bash
+with `zip` installed, or the GitHub Actions artifact.
+
+Package the extension zip for manual testing or Chrome Web Store upload:
+
+```bash
+pnpm package:extension
+```
+
+The package is written to `dist/term-ptt-custom-theme.zip`.
+
+Chrome Web Store listing, privacy, permission, asset, and reviewer test notes are in [`docs/chrome-web-store-submission.md`](docs/chrome-web-store-submission.md).
+Manual release validation steps are tracked in [`docs/manual-qa.md`](docs/manual-qa.md).
+The Chrome Web Store privacy policy text is tracked in [`PRIVACY.md`](PRIVACY.md).
+
+### Extension Development
+
+Load the unpacked extension from the `extension/` directory in `chrome://extensions`.
+
+The extension:
+
+- Injects `assets/color.css` on `https://term.ptt.cc/*`.
+- Loads `assets/colors.json`.
+- Loads `assets/fonts.json`.
+- Previews selected colors and font fallback stacks on the current `term.ptt.cc` tab.
+- Persists the selected colors and font preference with `chrome.storage.sync` after Apply.
+- Generates PNG extension icons during `pnpm build`.
+
+### Current Limits
+
+- Colors are implemented from the generated iTerm2 registry.
+- Font selection is implemented as a fallback-stack preference. Processed font file generation and bundling are still follow-up work.
+- Packs are intentionally out of scope.
+- Chrome Web Store screenshots currently use the original public custom-theme and retro-theme samples; review them before submission.
 
 ## License
 
