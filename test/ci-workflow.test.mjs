@@ -4,9 +4,11 @@ import { readFile } from "node:fs/promises";
 
 test("CI workflow verifies the extension package on PRs", async () => {
   const workflow = await readFile(".github/workflows/verify.yml", "utf8");
+  const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.match(packageJson.packageManager, /^pnpm@\d+\.\d+\.\d+$/);
   assert.match(workflow, /repository:\s+mbadolato\/iTerm2-Color-Schemes/);
   assert.match(workflow, /path:\s+vendor\/iTerm2-Color-Schemes/);
   assert.match(workflow, /run:\s+pnpm verify/);
