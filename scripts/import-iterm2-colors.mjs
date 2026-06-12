@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -139,6 +139,26 @@ export async function importWindowsTerminalColors(sourceDir) {
   };
 }
 
+export async function assertReadableSourceDir(sourceDir) {
+  let sourceStat;
+
+  try {
+    sourceStat = await stat(sourceDir);
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      throw new Error(
+        `Upstream iTerm2 color schemes directory not found at "${sourceDir}". Clone mbadolato/iTerm2-Color-Schemes next to this repository or set ITERM2_COLOR_SCHEMES_DIR.`,
+      );
+    }
+
+    throw error;
+  }
+
+  if (!sourceStat.isDirectory()) {
+    throw new Error(`Upstream iTerm2 color schemes path is not a directory: "${sourceDir}".`);
+  }
+}
+
 function assertHexColor(value, key, sourcePath) {
   if (typeof value !== "string" || !/^#[0-9a-fA-F]{6}$/.test(value)) {
     throw new Error(`${sourcePath}: ${key} must be a #RRGGBB color`);
@@ -176,6 +196,7 @@ async function main() {
     );
   }
 
+  await assertReadableSourceDir(sourceDir);
   const registry = await importWindowsTerminalColors(sourceDir);
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(registry, null, 2)}\n`);

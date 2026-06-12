@@ -5,6 +5,7 @@ import path from "node:path";
 import { tmpdir } from "node:os";
 
 import {
+  assertReadableSourceDir,
   importWindowsTerminalColors,
   normalizeWindowsTerminalScheme,
   slugifyColorName,
@@ -102,4 +103,16 @@ test("import script documents the configurable upstream source directory", async
 
   assert.match(script, /process\.env\.ITERM2_COLOR_SCHEMES_DIR/);
   assert.match(script, /\.\.\/iTerm2-Color-Schemes\/windowsterminal/);
+});
+
+test("import script explains missing upstream source directory", async () => {
+  const missingDir = path.join(
+    tmpdir(),
+    `term-ptt-custom-theme-missing-${process.pid}-${Date.now()}`,
+  );
+
+  await assert.rejects(
+    () => assertReadableSourceDir(missingDir),
+    /Upstream iTerm2 color schemes directory not found/,
+  );
 });
