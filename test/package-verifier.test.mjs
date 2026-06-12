@@ -9,7 +9,9 @@ import {
 
 test("verify script validates the packaged extension zip after packaging", async () => {
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+  const packageScript = await readFile("scripts/package-extension.mjs", "utf8");
   const verifierScript = await readFile("scripts/verify-extension-package.mjs", "utf8");
+  const readme = await readFile("README.md", "utf8");
 
   assert.match(packageJson.scripts.verify, /^pnpm build && pnpm test && pnpm package:extension/);
   assert.match(packageJson.scripts.verify, /pnpm verify:package/);
@@ -22,6 +24,8 @@ test("verify script validates the packaged extension zip after packaging", async
   assert.match(verifierScript, /assets\/colors\.json/);
   assert.match(verifierScript, /assets\/fonts\.json/);
   assert.match(verifierScript, /extractPopupLocalReferences/);
+  assert.match(packageScript, /Missing required command/);
+  assert.match(readme, /requires the system `zip` command/);
 });
 
 test("package verifier includes popup HTML dependencies in required entries", async () => {

@@ -170,6 +170,10 @@ Run only the release artifact preflight after packaging:
 pnpm preflight:release
 ```
 
+The packaging step requires the system `zip` command. On macOS and Linux this is
+usually available by default; on Windows, run the package step from WSL, Git Bash
+with `zip` installed, or the GitHub Actions artifact.
+
 Package the extension zip for manual testing or Chrome Web Store upload:
 
 ```bash

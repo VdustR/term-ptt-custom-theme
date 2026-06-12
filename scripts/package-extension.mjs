@@ -18,7 +18,18 @@ function run(command, args, options) {
       stdio: "inherit",
     });
 
-    child.on("error", reject);
+    child.on("error", (error) => {
+      if (error.code === "ENOENT") {
+        reject(
+          new Error(
+            `Missing required command "${command}". Install zip or run this package step on macOS, Linux, WSL, or CI.`,
+          ),
+        );
+        return;
+      }
+
+      reject(error);
+    });
     child.on("exit", (code) => {
       if (code === 0) {
         resolve();
