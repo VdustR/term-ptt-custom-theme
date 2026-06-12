@@ -1,0 +1,40 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+test("Chrome Web Store submission guide covers listing, privacy, and review fields", async () => {
+  const doc = await readFile("docs/chrome-web-store-submission.md", "utf8");
+
+  assert.match(doc, /# Chrome Web Store Submission Guide/);
+  assert.match(doc, /Publisher Account/);
+  assert.match(doc, /registered CWS developer account/);
+  assert.match(doc, /one-time registration fee/);
+  assert.match(doc, /Term PTT Custom Theme/);
+  assert.match(doc, /chrome-extension-package/);
+  assert.match(doc, /chrome-web-store-assets/);
+  assert.match(doc, /Public Store Listing Copy/);
+  assert.match(doc, /Chinese \(Traditional\)/);
+  assert.match(doc, /在 term\.ptt\.cc 預覽並套用終端機配色與字型偏好。/);
+  assert.match(doc, /即時預覽/);
+  assert.match(doc, /不會上傳你的瀏覽紀錄、帳號資料或 PTT 內容/);
+  assert.match(doc, /Reviewer Reference/);
+  assert.match(doc, /Single Purpose/);
+  assert.match(doc, /Customize terminal colors and font preferences on term\.ptt\.cc/);
+  assert.match(doc, /Permission Justifications/);
+  assert.match(doc, /`storage`/);
+  assert.match(doc, /`https:\/\/term\.ptt\.cc\/\*`/);
+  assert.doesNotMatch(doc, /externally_connectable/);
+  assert.match(doc, /Remote Code/);
+  assert.match(doc, /No remote code is executed/);
+  assert.match(doc, /Data Use/);
+  assert.match(doc, /does not collect, sell, or share user data/);
+  assert.match(doc, /PRIVACY\.md/);
+  assert.match(doc, /Store Listing Assets/);
+  assert.match(doc, /1280x800 or 640x400/);
+  assert.match(doc, /440x280/);
+  assert.match(doc, /Review Test Instructions/);
+  assert.match(doc, /No credentials are required/);
+  assert.doesNotMatch(doc, /MARKETPLACE_CHROME_WEB_STORE_URL/);
+  assert.doesNotMatch(doc, /MARKETPLACE_EXTENSION_ID/);
+  assert.doesNotMatch(doc, /marketplace/i);
+});

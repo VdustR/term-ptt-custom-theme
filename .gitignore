@@ -1,0 +1,6 @@
+node_modules/
+dist/
+vendor/
+.DS_Store
+store-assets/icon-concepts/
+store-assets/screenshot-drafts/

@@ -1,0 +1,173 @@
+:root {
+  color-scheme: light;
+  --bg: #fffdf8;
+  --panel: #f5f1e8;
+  --ink: #1e2724;
+  --muted: #63706a;
+  --line: #d9d1c4;
+  --accent: #0f766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.popup {
+  padding: 14px;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.controls {
+  display: block;
+}
+
+.controls[hidden] {
+  display: none;
+}
+
+.search,
+.font-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search input,
+.font-field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  background: #fff;
+}
+
+.font-field small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.color-list {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 0;
+  scrollbar-gutter: stable;
+}
+
+.color-button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.color-label {
+  min-width: 0;
+}
+
+.color-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: #edf8f5;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.color-button strong {
+  display: block;
+  font-size: 13px;
+}
+
+.color-button span {
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 12px);
+  gap: 3px;
+  justify-content: start;
+}
+
+.swatches i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 3px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions button {
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#resetButton {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+#applyButton {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+#applyButton:disabled {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: not-allowed;
+}
