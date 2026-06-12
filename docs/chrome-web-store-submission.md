@@ -4,11 +4,11 @@ This document tracks the submission fields for the Chrome Web Store item.
 
 References:
 
-- Chrome Web Store publish flow: <https://developer.chrome.com/docs/webstore/publish>
-- Store listing fields and graphic assets: <https://developer.chrome.com/docs/webstore/cws-dashboard-listing>
-- Image requirements: <https://developer.chrome.com/docs/webstore/images>
-- Privacy fields: <https://developer.chrome.com/docs/webstore/cws-dashboard-privacy>
-- Program policies: <https://developer.chrome.com/docs/webstore/program-policies>
+- [Chrome Web Store publish flow](https://developer.chrome.com/docs/webstore/publish)
+- [Store listing fields and graphic assets](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)
+- [Image requirements](https://developer.chrome.com/docs/webstore/images)
+- [Privacy fields](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)
+- [Program policies](https://developer.chrome.com/docs/webstore/program-policies)
 
 ## Publisher Account
 
