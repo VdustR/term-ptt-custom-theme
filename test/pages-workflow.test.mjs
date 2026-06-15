@@ -88,21 +88,30 @@ test("extension-only scope does not include marketplace handoff surfaces", async
   assert.equal(packageJson.scripts["configure:marketplace"], undefined);
   assert.equal(Object.hasOwn(manifest, "externally_connectable"), false);
   assert.equal(Object.hasOwn(manifest, "background"), false);
+  assert.equal(manifest.permissions.includes("tabs"), false);
   assert.doesNotMatch(popupHtml, /marketplaceLink|Store|vdustr\.github\.io/);
   assert.doesNotMatch(popupJs, /pendingMarketplace|from Store/);
 });
 
 test("extension popup browses colors and fonts inside the extension", async () => {
   const popupHtml = await readFile("extension/popup.html", "utf8");
+  const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");
 
   assert.match(popupHtml, /fontSelect/);
+  assert.match(popupHtml, /repositoryButton/);
+  assert.match(popupHtml, /Open project repository on GitHub/);
   assert.match(popupHtml, /currentPaletteName/);
   assert.match(popupHtml, /modifiedBadge/);
   assert.match(popupHtml, /paletteStrip/);
   assert.match(popupHtml, /colorList/);
   assert.match(popupJs, /fetch\("assets\/colors\.json"\)/);
   assert.match(popupJs, /fetch\("assets\/fonts\.json"\)/);
+  assert.match(popupJs, /const REPOSITORY_URL = "https:\/\/github\.com\/VdustR\/term-ptt-custom-theme";/);
+  assert.match(popupJs, /repositoryButton\.addEventListener\("click", openRepository\)/);
+  assert.match(popupJs, /chrome\.tabs\.create\(\{ url: REPOSITORY_URL, active: true \}\)/);
+  assert.match(popupCss, /\.header\s*{[^}]*align-items:\s*center;/s);
+  assert.match(popupCss, /\.repository-button\s*{[^}]*padding:\s*0;/s);
   assert.match(popupJs, /selectedFont/);
   assert.match(popupJs, /DEFAULT_COLORS_ID = "term-ptt-default"/);
   assert.match(popupJs, /DEFAULT_FONT_ID = "term-ptt-default"/);

@@ -44,10 +44,18 @@ select {
 }
 
 .header {
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 10px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
+}
+
+.header-copy {
+  min-width: 0;
 }
 
 h1 {
@@ -61,6 +69,35 @@ p {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 11px;
+}
+
+.repository-button {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0;
+  background: var(--field);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.repository-button:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.repository-button:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  outline-offset: 1px;
+}
+
+.repository-icon {
+  display: block;
 }
 
 .controls {
