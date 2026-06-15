@@ -365,7 +365,6 @@ function renderPresetPreview(preset) {
       renderPresetArticleLine({
         markerColor: defaultPttScheme.brightGreen,
         title: `[配色] ${preset.name}`,
-        source: renderPresetSource(preset),
       }),
       renderPresetSampleLine(preset, defaultPttScheme),
     );
@@ -381,7 +380,6 @@ function renderPresetPreview(preset) {
     renderPresetArticleLine({
       markerColor: schemeColor(preset.scheme, "brightGreen", foreground),
       title: `[配色] ${preset.name}`,
-      source: renderPresetSource(preset),
     }),
     renderPresetSampleLine(preset, preset.scheme),
   );
@@ -389,7 +387,7 @@ function renderPresetPreview(preset) {
   return preview;
 }
 
-function renderPresetArticleLine({ markerColor, title, source }) {
+function renderPresetArticleLine({ markerColor, title }) {
   const article = document.createElement("div");
   article.className = "preset-preview-article";
 
@@ -408,9 +406,6 @@ function renderPresetArticleLine({ markerColor, title, source }) {
   titleNode.textContent = title;
 
   article.append(marker, date, titleNode);
-  if (source) {
-    article.append(source);
-  }
   return article;
 }
 
@@ -448,32 +443,6 @@ function renderPttColorSample(cell, scheme) {
   sample.textContent = cell.text;
 
   return sample;
-}
-
-function renderPresetSource(preset) {
-  const source = document.createElement("span");
-  const sourcePath = preset.sourcePath ?? "term.ptt.cc default";
-  source.className = "preset-preview-source";
-  source.textContent = formatPresetSource(sourcePath);
-  source.title = sourcePath;
-  return source;
-}
-
-function formatPresetSource(sourcePath) {
-  if (!sourcePath) {
-    return "Term PTT";
-  }
-
-  if (sourcePath.startsWith("term.ptt.cc")) {
-    return "Term PTT";
-  }
-
-  const [source] = sourcePath.split("/");
-  if (source === "windowsterminal") {
-    return "WinTerm";
-  }
-
-  return source || "Term PTT";
 }
 
 function schemeColor(scheme, schemeKey, fallback) {

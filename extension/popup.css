@@ -367,7 +367,6 @@ p {
   white-space: nowrap;
 }
 
-.preset-preview-source,
 .ptt-color-sample-label {
   display: inline-grid;
   flex: 0 0 auto;
@@ -376,16 +375,6 @@ p {
   border: 1px solid color-mix(in srgb, currentColor 34%, transparent);
   border-radius: 2px;
   font-weight: 800;
-}
-
-.preset-preview-source {
-  max-width: 116px;
-  overflow: hidden;
-  padding: 0 5px;
-  background: color-mix(in srgb, currentColor 8%, transparent);
-  opacity: 0.78;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ptt-color-sample-group {
