@@ -1,4 +1,5 @@
 const statusNode = document.getElementById("status");
+const repositoryButton = document.getElementById("repositoryButton");
 const controlsNode = document.getElementById("controls");
 const searchInput = document.getElementById("searchInput");
 const fontSelect = document.getElementById("fontSelect");
@@ -10,6 +11,7 @@ const paletteStripNode = document.getElementById("paletteStrip");
 const colorListNode = document.getElementById("colorList");
 const applyButton = document.getElementById("applyButton");
 
+const REPOSITORY_URL = "https://github.com/VdustR/term-ptt-custom-theme";
 const TERM_PTT_URL = "https://term.ptt.cc/";
 const TERM_PTT_PATTERN = "https://term.ptt.cc/*";
 const DEFAULT_COLORS_ID = "term-ptt-default";
@@ -138,6 +140,7 @@ let selectedFont = null;
 let savedFont = null;
 let persistDraftTimeout = null;
 
+repositoryButton.addEventListener("click", openRepository);
 window.addEventListener("pagehide", flushPendingDraftWrite);
 init();
 
@@ -218,6 +221,15 @@ async function routeToTermPtt() {
     window.close();
   } catch {
     statusNode.textContent = "Could not open term.ptt.cc.";
+  }
+}
+
+async function openRepository() {
+  try {
+    await chrome.tabs.create({ url: REPOSITORY_URL, active: true });
+    window.close();
+  } catch {
+    statusNode.textContent = "Could not open repository.";
   }
 }
 

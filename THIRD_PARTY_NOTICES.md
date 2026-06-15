@@ -15,3 +15,10 @@ This project generates and references data from third-party open-source projects
 - Use: planned source for a processed PTT-compatible font preset in `data/fonts.json`
 - License: MIT License
 - Bundling status: no Fusion Pixel font files are bundled in this extension package
+
+## Primer Octicons
+
+- Repository: [primer/octicons](https://github.com/primer/octicons)
+- Use: inline GitHub mark icon in `extension/popup.html`
+- Copyright: GitHub Inc.
+- License: MIT License
