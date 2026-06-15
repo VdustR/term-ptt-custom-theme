@@ -4,30 +4,30 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-const requiredPttColorKeys = [
+const requiredAnsiSchemeKeys = [
   "black",
-  "maroon",
-  "green",
-  "olive",
-  "navy",
-  "purple",
-  "teal",
-  "silver",
-  "grey",
   "red",
-  "0f0",
-  "ff0",
-  "00f",
-  "f0f",
-  "0ff",
-  "fff",
+  "green",
+  "yellow",
+  "blue",
+  "purple",
+  "cyan",
+  "white",
+  "brightBlack",
+  "brightRed",
+  "brightGreen",
+  "brightYellow",
+  "brightBlue",
+  "brightPurple",
+  "brightCyan",
+  "brightWhite",
 ];
 
 async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
 }
 
-test("generated colors registry contains complete PTT color mappings", async () => {
+test("generated colors registry contains complete ANSI scheme mappings", async () => {
   const registry = await readJson("data/colors.json");
 
   assert.equal(registry.schemaVersion, 1);
@@ -36,7 +36,8 @@ test("generated colors registry contains complete PTT color mappings", async () 
   for (const preset of registry.colors) {
     assert.equal(typeof preset.id, "string");
     assert.equal(typeof preset.name, "string");
-    assert.deepEqual(Object.keys(preset.colors).sort(), [...requiredPttColorKeys].sort());
+    assert.deepEqual(Object.keys(preset.scheme).sort(), [...requiredAnsiSchemeKeys].sort());
+    assert.equal(preset.colors, undefined);
   }
 });
 

@@ -18,15 +18,27 @@ This is the source-of-truth visual check because the real PTT terminal DOM is th
 3. Click Load unpacked and select the `extension/` directory.
 4. Open `https://term.ptt.cc/`.
 5. Open the `Term PTT Custom Theme` extension popup.
-6. Select a colors preset.
-7. Select each available font preference.
-8. Confirm the active `term.ptt.cc` tab updates while the popup is open.
-9. Click Apply.
-10. Reload `https://term.ptt.cc/`.
-11. Confirm the applied colors and font preference are restored.
-12. Open the popup again, change the colors preset, then close the popup without applying.
-13. Confirm the page restores the saved appearance after the popup disconnects.
-14. Click Reset and confirm the preview returns to the saved appearance.
+6. Confirm a fresh install selects `Term PTT Default` for colors and font, with Apply disabled.
+7. Select a colors preset.
+8. Select each available font preference.
+9. Confirm the active `term.ptt.cc` tab updates while the popup is open.
+10. Click Apply.
+11. Reload `https://term.ptt.cc/`.
+12. Confirm the applied colors and font preference are restored.
+13. Select `Term PTT Default` for colors and font, then click Apply.
+14. Reload `https://term.ptt.cc/` and confirm the extension color and font styles are not present.
+15. Open the popup again, change the colors preset, then close the popup without applying.
+16. Confirm the page restores the saved appearance after the popup disconnects.
+17. Reopen the popup and confirm the unsaved draft selection is restored and previewed again.
+18. Apply a preset that is far down the preset list.
+19. Reopen the popup and confirm the applied preset row is selected and scrolled into view.
+20. Click one of the current palette swatches and confirm the native color picker opens directly.
+21. Change that single color value.
+22. Confirm the page updates immediately, the popup shows Modified, and Apply becomes enabled.
+23. Click Reset next to Modified and confirm the 16 colors return to the selected base preset without saving.
+24. Change a color again, close the popup without applying, and confirm the page restores the saved appearance.
+25. Reopen the popup and confirm the unsaved color edit draft is restored and previewed again.
+26. Click Apply, reload `https://term.ptt.cc/`, and confirm the customized 16-color palette is restored.
 
 Expected result:
 

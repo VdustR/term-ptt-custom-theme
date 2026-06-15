@@ -60,7 +60,7 @@ Term PTT Custom Theme 是給 `term.ptt.cc` 使用的外觀調整工具。
 - 從 `mbadolato/iTerm2-Color-Schemes` 轉換而來的多組終端機 colors。
 - PTT 預設字型與 retro pixel font fallback stack。
 - 套用前 live preview。
-- Reset 回復預設外觀。
+- `Term PTT Default` 可回到 `term.ptt.cc` 原始外觀。
 
 Extension 只在 `https://term.ptt.cc/*` 執行，設定儲存在 Chrome extension storage，不會上傳你的瀏覽紀錄、帳號資料或 PTT 內容。
 
@@ -76,7 +76,7 @@ Customize terminal colors and font preferences on term.ptt.cc.
 
 ### `storage`
 
-Stores the user's selected colors and selected font preference in Chrome extension storage. The extension uses this so the chosen appearance persists and can be restored on later visits.
+Stores the user's selected color scheme and selected font preference in Chrome extension storage. The extension uses this so the chosen appearance persists and can be restored on later visits.
 
 ### `https://term.ptt.cc/*`
 
@@ -102,7 +102,7 @@ Use the public repository URL for `PRIVACY.md` as the Chrome Web Store privacy p
 
 Stored data is limited to:
 
-- Selected colors preset id, name, and color values.
+- Selected color scheme id, name, base preset id, and color values.
 - Selected font id, name, and fallback stack.
 
 The popup reads the active tab URL to decide whether preview is available on `term.ptt.cc`. The extension does not send browsing activity, terminal content, account data, or page contents to a server controlled by this project.
@@ -133,4 +133,6 @@ No credentials are required.
 6. Confirm that preview changes the active `term.ptt.cc` tab before saving.
 7. Click Apply.
 8. Reload `term.ptt.cc` and confirm the selected appearance is restored.
-9. Click Reset in the popup and confirm the preview reverts to the saved appearance.
+9. Select `Term PTT Default` for colors and font.
+10. Click Apply.
+11. Reload `term.ptt.cc` and confirm the original site appearance is restored.

@@ -2,8 +2,7 @@ import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const requiredWindowsTerminalKeys = [
-  "name",
+export const requiredAnsiSchemeKeys = [
   "black",
   "red",
   "green",
@@ -22,24 +21,7 @@ const requiredWindowsTerminalKeys = [
   "brightWhite",
 ];
 
-export const requiredPttColorKeys = [
-  "black",
-  "maroon",
-  "green",
-  "olive",
-  "navy",
-  "purple",
-  "teal",
-  "silver",
-  "grey",
-  "red",
-  "0f0",
-  "ff0",
-  "00f",
-  "f0f",
-  "0ff",
-  "fff",
-];
+const requiredWindowsTerminalKeys = ["name", ...requiredAnsiSchemeKeys];
 
 export function slugifyColorName(name) {
   return name
@@ -50,59 +32,46 @@ export function slugifyColorName(name) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function normalizeWindowsTerminalScheme(scheme, sourcePath) {
+export function normalizeWindowsTerminalScheme(schemeInput, sourcePath) {
   for (const key of requiredWindowsTerminalKeys) {
-    if (!(key in scheme)) {
+    if (!(key in schemeInput)) {
       throw new Error(`${sourcePath}: missing required key ${key}`);
     }
   }
 
   for (const key of requiredWindowsTerminalKeys) {
     if (key !== "name") {
-      assertHexColor(scheme[key], key, sourcePath);
+      assertHexColor(schemeInput[key], key, sourcePath);
     }
   }
 
-  const colors = {
-    black: scheme.black,
-    maroon: scheme.red,
-    green: scheme.green,
-    olive: scheme.yellow,
-    navy: scheme.blue,
-    purple: scheme.purple,
-    teal: scheme.cyan,
-    silver: scheme.white,
-    grey: scheme.brightBlack,
-    red: scheme.brightRed,
-    "0f0": scheme.brightGreen,
-    ff0: scheme.brightYellow,
-    "00f": scheme.brightBlue,
-    f0f: scheme.brightPurple,
-    "0ff": scheme.brightCyan,
-    fff: scheme.brightWhite,
-  };
+  const scheme = Object.fromEntries(
+    requiredAnsiSchemeKeys.map((key) => [key, schemeInput[key]]),
+  );
 
   return {
-    id: slugifyColorName(scheme.name),
-    name: scheme.name,
+    id: slugifyColorName(schemeInput.name),
+    name: schemeInput.name,
     source: "mbadolato/iTerm2-Color-Schemes",
     sourcePath,
     license: "MIT collection; individual scheme rights belong to original authors",
-    colors,
+    scheme,
     metadata: {
-      background: optionalHexColor(scheme.background, "background", sourcePath) ?? scheme.black,
+      background:
+        optionalHexColor(schemeInput.background, "background", sourcePath) ?? schemeInput.black,
       foreground:
-        optionalHexColor(scheme.foreground, "foreground", sourcePath) ?? scheme.brightWhite,
+        optionalHexColor(schemeInput.foreground, "foreground", sourcePath) ??
+        schemeInput.brightWhite,
       cursor:
-        optionalHexColor(scheme.cursorColor, "cursorColor", sourcePath) ??
-        scheme.foreground ??
-        scheme.brightWhite,
+        optionalHexColor(schemeInput.cursorColor, "cursorColor", sourcePath) ??
+        schemeInput.foreground ??
+        schemeInput.brightWhite,
       selection: optionalHexColor(
-        scheme.selectionBackground,
+        schemeInput.selectionBackground,
         "selectionBackground",
         sourcePath,
       ),
-      isDark: inferIsDark(scheme.background ?? scheme.black),
+      isDark: inferIsDark(schemeInput.background ?? schemeInput.black),
     },
   };
 }

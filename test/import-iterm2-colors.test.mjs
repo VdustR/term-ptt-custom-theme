@@ -18,7 +18,7 @@ test("slugifyColorName creates stable lower-case ids", () => {
   assert.equal(slugifyColorName("Dracula+"), "dracula-plus");
 });
 
-test("normalizeWindowsTerminalScheme maps Windows Terminal ANSI colors to PTT colors", () => {
+test("normalizeWindowsTerminalScheme keeps Windows Terminal ANSI scheme keys", () => {
   const normalized = normalizeWindowsTerminalScheme(
     {
       name: "Gruvbox Dark",
@@ -47,13 +47,21 @@ test("normalizeWindowsTerminalScheme maps Windows Terminal ANSI colors to PTT co
   );
 
   assert.equal(normalized.id, "gruvbox-dark");
-  assert.equal(normalized.colors.black, "#282828");
-  assert.equal(normalized.colors.maroon, "#cc241d");
-  assert.equal(normalized.colors.olive, "#d79921");
-  assert.equal(normalized.colors.navy, "#458588");
-  assert.equal(normalized.colors.teal, "#689d6a");
-  assert.equal(normalized.colors["0f0"], "#b8bb26");
-  assert.equal(normalized.colors.fff, "#ebdbb2");
+  assert.equal(normalized.scheme.black, "#282828");
+  assert.equal(normalized.scheme.red, "#cc241d");
+  assert.equal(normalized.scheme.yellow, "#d79921");
+  assert.equal(normalized.scheme.blue, "#458588");
+  assert.equal(normalized.scheme.cyan, "#689d6a");
+  assert.equal(normalized.scheme.white, "#a89984");
+  assert.equal(normalized.scheme.brightBlack, "#928374");
+  assert.equal(normalized.scheme.brightRed, "#fb4934");
+  assert.equal(normalized.scheme.brightGreen, "#b8bb26");
+  assert.equal(normalized.scheme.brightYellow, "#fabd2f");
+  assert.equal(normalized.scheme.brightBlue, "#83a598");
+  assert.equal(normalized.scheme.brightPurple, "#d3869b");
+  assert.equal(normalized.scheme.brightCyan, "#8ec07c");
+  assert.equal(normalized.scheme.brightWhite, "#ebdbb2");
+  assert.equal(normalized.colors, undefined);
   assert.equal(normalized.metadata.background, "#282828");
   assert.equal(normalized.metadata.foreground, "#ebdbb2");
   assert.equal(normalized.metadata.isDark, true);

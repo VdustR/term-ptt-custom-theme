@@ -1,22 +1,22 @@
 const STYLE_ID = "term-ptt-custom-theme-colors-active";
 const FONT_STYLE_ID = "term-ptt-custom-theme-font-active";
 
-let savedColors = null;
+let savedScheme = null;
 let savedFont = null;
-let previewingColors = false;
+let previewingScheme = false;
 let previewingFont = false;
 
-function applyColors(colors) {
+function applyScheme(scheme) {
   let style = document.getElementById(STYLE_ID);
   if (!style) {
     style = document.createElement("style");
     style.id = STYLE_ID;
     document.documentElement.appendChild(style);
   }
-  style.textContent = TermPttColors.colorsToCssVariables(colors);
+  style.textContent = TermPttColors.schemeToCssVariables(scheme);
 }
 
-function clearColors() {
+function clearScheme() {
   document.getElementById(STYLE_ID)?.remove();
 }
 
@@ -35,13 +35,13 @@ function clearFont() {
 }
 
 function restoreSavedAppearance() {
-  previewingColors = false;
+  previewingScheme = false;
   previewingFont = false;
 
-  if (savedColors) {
-    applyColors(savedColors);
+  if (savedScheme) {
+    applyScheme(savedScheme);
   } else {
-    clearColors();
+    clearScheme();
   }
 
   if (savedFont) {
@@ -52,15 +52,15 @@ function restoreSavedAppearance() {
 }
 
 async function loadSavedAppearance() {
-  const { selectedColors, selectedFont } = await chrome.storage.sync.get([
-    "selectedColors",
+  const { selectedScheme, selectedFont } = await chrome.storage.sync.get([
+    "selectedScheme",
     "selectedFont",
   ]);
-  savedColors = selectedColors?.colors ?? null;
+  savedScheme = selectedScheme?.scheme ?? null;
   savedFont = selectedFont ?? null;
 
-  if (savedColors) {
-    applyColors(savedColors);
+  if (savedScheme) {
+    applyScheme(savedScheme);
   }
 
   if (savedFont) {
@@ -74,10 +74,17 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 
   port.onMessage.addListener((message) => {
-    if (message.type === "preview-colors") {
-      previewingColors = true;
-      applyColors(message.preset.colors);
+    if (message.type === "preview-scheme") {
+      previewingScheme = true;
+      applyScheme(message.preset.scheme);
       port.postMessage({ type: "preview-applied", id: message.preset.id });
+      return;
+    }
+
+    if (message.type === "preview-clear-scheme") {
+      previewingScheme = true;
+      clearScheme();
+      port.postMessage({ type: "scheme-preview-cleared" });
       return;
     }
 
@@ -88,11 +95,26 @@ chrome.runtime.onConnect.addListener((port) => {
       return;
     }
 
-    if (message.type === "apply-colors") {
-      previewingColors = false;
-      savedColors = message.preset.colors;
-      applyColors(message.preset.colors);
+    if (message.type === "preview-clear-font") {
+      previewingFont = true;
+      clearFont();
+      port.postMessage({ type: "font-preview-cleared" });
+      return;
+    }
+
+    if (message.type === "apply-scheme") {
+      previewingScheme = false;
+      savedScheme = message.preset.scheme;
+      applyScheme(savedScheme);
       port.postMessage({ type: "colors-applied", id: message.preset.id });
+      return;
+    }
+
+    if (message.type === "apply-clear-scheme") {
+      previewingScheme = false;
+      savedScheme = null;
+      clearScheme();
+      port.postMessage({ type: "colors-cleared" });
       return;
     }
 
@@ -104,6 +126,14 @@ chrome.runtime.onConnect.addListener((port) => {
       return;
     }
 
+    if (message.type === "apply-clear-font") {
+      previewingFont = false;
+      savedFont = null;
+      clearFont();
+      port.postMessage({ type: "font-cleared" });
+      return;
+    }
+
     if (message.type === "reset-preview") {
       restoreSavedAppearance();
       port.postMessage({ type: "preview-reset" });
@@ -111,7 +141,7 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 
   port.onDisconnect.addListener(() => {
-    if (previewingColors || previewingFont) {
+    if (previewingScheme || previewingFont) {
       restoreSavedAppearance();
     }
   });
