@@ -11,35 +11,90 @@ async function loadExtensionColorUtils() {
   return context.TermPttColors;
 }
 
-test("extension color utility serializes PTT CSS variables", async () => {
-  const { colorsToCssVariables } = await loadExtensionColorUtils();
+const ansiScheme = {
+  black: "#000000",
+  red: "#800000",
+  green: "#008000",
+  yellow: "#808000",
+  blue: "#000080",
+  purple: "#800080",
+  cyan: "#008080",
+  white: "#c0c0c0",
+  brightBlack: "#808080",
+  brightRed: "#ff0000",
+  brightGreen: "#00ff00",
+  brightYellow: "#ffff00",
+  brightBlue: "#0000ff",
+  brightPurple: "#ff00ff",
+  brightCyan: "#00ffff",
+  brightWhite: "#ffffff",
+};
+
+test("extension color utility maps ANSI schemes to term.ptt CSS color keys", async () => {
+  const { schemeToPttColors } = await loadExtensionColorUtils();
+
+  assert.deepEqual({ ...schemeToPttColors(ansiScheme) }, {
+    black: "#000000",
+    maroon: "#800000",
+    green: "#008000",
+    olive: "#808000",
+    navy: "#000080",
+    purple: "#800080",
+    teal: "#008080",
+    silver: "#c0c0c0",
+    grey: "#808080",
+    red: "#ff0000",
+    "0f0": "#00ff00",
+    ff0: "#ffff00",
+    "00f": "#0000ff",
+    f0f: "#ff00ff",
+    "0ff": "#00ffff",
+    fff: "#ffffff",
+  });
+});
+
+test("extension color utility serializes ANSI schemes to term.ptt CSS variables", async () => {
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
 
   assert.equal(
-    colorsToCssVariables({
-      black: "#000000",
-      maroon: "#800000",
-      "0f0": "#00ff00",
-      fff: "#ffffff",
-    }),
-    ":root{--term-color-black:#000000;--term-color-maroon:#800000;--term-color-0f0:#00ff00;--term-color-fff:#ffffff;}",
+    schemeToCssVariables(ansiScheme),
+    ":root{--term-color-black:#000000;--term-color-maroon:#800000;--term-color-green:#008000;--term-color-olive:#808000;--term-color-navy:#000080;--term-color-purple:#800080;--term-color-teal:#008080;--term-color-silver:#c0c0c0;--term-color-grey:#808080;--term-color-red:#ff0000;--term-color-0f0:#00ff00;--term-color-ff0:#ffff00;--term-color-00f:#0000ff;--term-color-f0f:#ff00ff;--term-color-0ff:#00ffff;--term-color-fff:#ffffff;}",
   );
 });
 
-test("extension color utility rejects invalid color keys", async () => {
-  const { colorsToCssVariables } = await loadExtensionColorUtils();
+test("extension color utility rejects missing ANSI scheme keys", async () => {
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
 
   assert.throws(
-    () => colorsToCssVariables({ background: "#000000" }),
-    /Unsupported PTT color key: background/,
+    () => schemeToCssVariables({ black: "#000000" }),
+    /Invalid color value for red/,
+  );
+});
+
+test("extension color utility rejects missing scheme objects", async () => {
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
+
+  assert.throws(
+    () => schemeToCssVariables(null),
+    /Scheme is required/,
+  );
+});
+
+test("extension color utility rejects unsupported ANSI scheme keys", async () => {
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
+
+  assert.throws(
+    () => schemeToCssVariables({ ...ansiScheme, background: "#000000" }),
+    /Unsupported ANSI scheme color key: background/,
   );
 });
 
 test("extension color utility rejects invalid color values", async () => {
-  const { colorsToCssVariables } = await loadExtensionColorUtils();
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
 
   assert.throws(
-    () => colorsToCssVariables({ black: "red" }),
-    /Invalid PTT color value for black/,
+    () => schemeToCssVariables({ ...ansiScheme, red: "red" }),
+    /Invalid color value for red/,
   );
 });
 

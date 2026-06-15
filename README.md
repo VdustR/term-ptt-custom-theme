@@ -140,7 +140,7 @@ Clone that repository next to this repository:
 git clone https://github.com/mbadolato/iTerm2-Color-Schemes.git ../iTerm2-Color-Schemes
 ```
 
-Generate the normalized PTT colors registry:
+Generate the normalized ANSI color scheme registry:
 
 ```bash
 pnpm import:colors
@@ -195,8 +195,8 @@ The extension:
 - Injects `assets/color.css` on `https://term.ptt.cc/*`.
 - Loads `assets/colors.json`.
 - Loads `assets/fonts.json`.
-- Previews selected colors and font fallback stacks on the current `term.ptt.cc` tab.
-- Persists the selected colors and font preference with `chrome.storage.sync` after Apply.
+- Previews selected color schemes and font fallback stacks on the current `term.ptt.cc` tab.
+- Persists the selected color scheme and font preference with `chrome.storage.sync` after Apply.
 - Generates PNG extension icons during `pnpm build`.
 
 ### Current Limits

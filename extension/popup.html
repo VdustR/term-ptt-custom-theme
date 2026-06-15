@@ -16,26 +16,40 @@
       </header>
 
       <section id="controls" class="controls" hidden>
-        <label class="search">
-          <span>Search</span>
-          <input id="searchInput" type="search" autocomplete="off" placeholder="Gruvbox, Solarized, Dracula">
-        </label>
-
         <label class="font-field">
           <span>Font</span>
           <select id="fontSelect"></select>
           <small id="fontStatus">Loading fonts...</small>
         </label>
 
+        <section class="current-palette" aria-labelledby="currentPaletteHeading">
+          <div class="palette-header">
+            <div class="palette-title">
+              <span id="currentPaletteHeading">Current Palette</span>
+              <strong id="currentPaletteName">Loading...</strong>
+            </div>
+            <div class="palette-state">
+              <span id="modifiedBadge" class="modified-badge" hidden>Modified</span>
+              <button id="resetButton" class="inline-reset" type="button" hidden>Reset</button>
+            </div>
+          </div>
+          <div id="paletteStrip" class="palette-strip" aria-label="Current palette colors"></div>
+        </section>
+
+        <label class="search">
+          <span>Search Presets</span>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="Gruvbox, Solarized, Dracula">
+        </label>
+
         <div id="colorList" class="color-list" aria-label="Color presets"></div>
 
         <footer class="actions">
-          <button id="resetButton" type="button">Reset</button>
           <button id="applyButton" type="button" disabled>Apply</button>
         </footer>
       </section>
     </main>
     <script src="ptt-colors.js"></script>
+    <script src="appearance-state.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

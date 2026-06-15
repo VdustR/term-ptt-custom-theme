@@ -54,21 +54,32 @@ async function loadContentHarness(storageState = {}) {
   };
 }
 
-const savedPreset = {
-  id: "saved",
-  name: "Saved",
-  colors: {
-    black: "#000000",
-    fff: "#ffffff",
-  },
+const savedScheme = {
+  black: "#000000",
+  red: "#800000",
+  green: "#008000",
+  yellow: "#808000",
+  blue: "#000080",
+  purple: "#800080",
+  cyan: "#008080",
+  white: "#c0c0c0",
+  brightBlack: "#808080",
+  brightRed: "#ff0000",
+  brightGreen: "#00ff00",
+  brightYellow: "#ffff00",
+  brightBlue: "#0000ff",
+  brightPurple: "#ff00ff",
+  brightCyan: "#00ffff",
+  brightWhite: "#ffffff",
 };
 
-const previewPreset = {
+const previewScheme = {
   id: "preview",
   name: "Preview",
-  colors: {
+  scheme: {
+    ...savedScheme,
     black: "#111111",
-    fff: "#eeeeee",
+    brightWhite: "#eeeeee",
   },
 };
 
@@ -84,9 +95,14 @@ const previewFont = {
   fallbackStack: ["Fusion Pixel PTT", "MingLiu", "monospace"],
 };
 
-test("content script loads saved colors and font from storage", async () => {
+test("content script loads saved scheme and font from storage", async () => {
   const harness = await loadContentHarness({
-    selectedColors: savedPreset,
+    selectedScheme: {
+      id: "saved",
+      name: "Saved",
+      basePresetId: "saved",
+      scheme: savedScheme,
+    },
     selectedFont: savedFont,
   });
 
@@ -94,14 +110,19 @@ test("content script loads saved colors and font from storage", async () => {
   assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
 });
 
-test("content script previews colors and font, then restores saved appearance on disconnect", async () => {
+test("content script previews scheme and font, then restores saved appearance on disconnect", async () => {
   const harness = await loadContentHarness({
-    selectedColors: savedPreset,
+    selectedScheme: {
+      id: "saved",
+      name: "Saved",
+      basePresetId: "saved",
+      scheme: savedScheme,
+    },
     selectedFont: savedFont,
   });
   const port = harness.connect();
 
-  port.send({ type: "preview-colors", preset: previewPreset });
+  port.send({ type: "preview-scheme", preset: previewScheme });
   port.send({ type: "preview-font", font: previewFont });
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#111111/);
@@ -117,12 +138,50 @@ test("content script previews colors and font, then restores saved appearance on
   assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
 });
 
+test("content script previews and applies Term PTT Default by clearing styles", async () => {
+  const harness = await loadContentHarness({
+    selectedScheme: {
+      id: "saved",
+      name: "Saved",
+      basePresetId: "saved",
+      scheme: savedScheme,
+    },
+    selectedFont: savedFont,
+  });
+  const previewPort = harness.connect();
+
+  previewPort.send({ type: "preview-clear-scheme" });
+  previewPort.send({ type: "preview-clear-font" });
+
+  assert.equal(harness.styleText("term-ptt-custom-theme-colors-active"), null);
+  assert.equal(harness.styleText("term-ptt-custom-theme-font-active"), null);
+  assert.deepEqual(toPlainObject(previewPort.messages), [
+    { type: "scheme-preview-cleared" },
+    { type: "font-preview-cleared" },
+  ]);
+
+  previewPort.disconnect();
+
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
+  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
+
+  const applyPort = harness.connect();
+  applyPort.send({ type: "preview-clear-scheme" });
+  applyPort.send({ type: "apply-clear-scheme" });
+  applyPort.send({ type: "preview-clear-font" });
+  applyPort.send({ type: "apply-clear-font" });
+  applyPort.disconnect();
+
+  assert.equal(harness.styleText("term-ptt-custom-theme-colors-active"), null);
+  assert.equal(harness.styleText("term-ptt-custom-theme-font-active"), null);
+});
+
 test("content script keeps applied appearance after popup disconnects", async () => {
   const harness = await loadContentHarness();
   const port = harness.connect();
 
-  port.send({ type: "preview-colors", preset: previewPreset });
-  port.send({ type: "apply-colors", preset: previewPreset });
+  port.send({ type: "preview-scheme", preset: previewScheme });
+  port.send({ type: "apply-scheme", preset: previewScheme });
   port.send({ type: "preview-font", font: previewFont });
   port.send({ type: "apply-font", font: previewFont });
   port.disconnect();
