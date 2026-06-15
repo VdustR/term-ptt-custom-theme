@@ -140,7 +140,11 @@ async function routeToTermPtt() {
     if (targetTab?.id) {
       await chrome.tabs.update(targetTab.id, { active: true });
       if (typeof targetTab.windowId === "number" && chrome.windows?.update) {
-        await chrome.windows.update(targetTab.windowId, { focused: true });
+        try {
+          await chrome.windows.update(targetTab.windowId, { focused: true });
+        } catch {
+          // Window focus is best-effort; the tab activation above is the primary route.
+        }
       }
     } else {
       await chrome.tabs.create({ url: TERM_PTT_URL, active: true });

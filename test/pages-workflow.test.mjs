@@ -183,7 +183,10 @@ test("extension popup routes non-term pages to term.ptt.cc", async () => {
   assert.match(initBody, /if \(!isTermPttTab\(activeTab\)\) \{\s*await routeToTermPtt\(\);\s*return;\s*\}/s);
   assert.match(routeBody, /chrome\.tabs\.query\(\{ url: TERM_PTT_PATTERN \}\)/);
   assert.match(routeBody, /chrome\.tabs\.update\(targetTab\.id, \{ active: true \}\)/);
-  assert.match(routeBody, /chrome\.windows\.update\(targetTab\.windowId, \{ focused: true \}\)/);
+  assert.match(
+    routeBody,
+    /if \(typeof targetTab\.windowId === "number" && chrome\.windows\?\.update\) \{\s*try \{\s*await chrome\.windows\.update\(targetTab\.windowId, \{ focused: true \}\);\s*\} catch \{/s,
+  );
   assert.match(routeBody, /chrome\.tabs\.create\(\{ url: TERM_PTT_URL, active: true \}\)/);
   assert.match(routeBody, /window\.close\(\)/);
   assert.match(routeBody, /statusNode\.textContent = "Could not open term\.ptt\.cc\."/);
