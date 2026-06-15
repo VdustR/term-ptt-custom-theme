@@ -172,6 +172,45 @@ test("extension popup opens the color picker directly from current palette swatc
   assert.doesNotMatch(popupCss, /:has\(\.palette-editor/);
 });
 
+test("extension popup renders presets as PTT-style color previews", async () => {
+  const popupCss = await readFile("extension/popup.css", "utf8");
+  const popupJs = await readFile("extension/popup.js", "utf8");
+  const renderColorButtonBody = extractFunctionBody(popupJs, "renderColorButton");
+
+  assert.match(renderColorButtonBody, /button\.append\(renderPresetPreview\(preset\)\)/);
+  assert.match(popupJs, /function renderPresetPreview\(preset\)/);
+  assert.match(popupJs, /\[配色\]/);
+  assert.match(popupJs, /pttPreviewSampleGroups/);
+  assert.match(popupJs, /pttBrightForegroundKeys/);
+  assert.match(popupJs, /pttDarkBackgroundKeys/);
+  assert.match(popupJs, /label: "黑底"/);
+  assert.match(popupJs, /label: "白字"/);
+  assert.match(popupJs, /pttClass: `q\$\{schemeKeys\.indexOf\(key\)\} b0\/body`/);
+  assert.match(popupJs, /pttClass: `q15 \$\{bgIndex === 0 \? "b0\/body" : `b\$\{bgIndex\}`\}`/);
+  assert.match(popupJs, /function renderPttColorSample/);
+  assert.match(popupJs, /function formatPresetSource/);
+  assert.match(popupJs, /WinTerm/);
+  assert.match(popupJs, /schemeColor\(preset\.scheme, "black"/);
+  assert.match(popupJs, /schemeColor\(preset\.scheme, "brightWhite"/);
+  assert.match(popupJs, /preset-preview-default/);
+  assert.doesNotMatch(popupJs, /textShadow/);
+  assert.doesNotMatch(popupJs, /標題|底紅|底白|爆|推/);
+  assert.doesNotMatch(popupJs, /renderAnsiForeground\("紅"/);
+  assert.doesNotMatch(popupJs, /function renderAnsiPair/);
+  assert.doesNotMatch(popupJs, /className = "swatches"/);
+  assert.match(popupCss, /\.preset-preview\s*{/);
+  assert.match(popupCss, /\.preset-preview-article\s*{/);
+  assert.match(popupCss, /\.preset-preview-title\s*{/);
+  assert.match(popupCss, /\.preset-preview-samples\s*{/);
+  assert.match(popupCss, /\.preset-preview-source\s*{/);
+  assert.match(popupCss, /\.ptt-color-sample-group\s*{/);
+  assert.match(popupCss, /\.ptt-color-sample-label\s*{/);
+  assert.match(popupCss, /\.ptt-color-sample\s*{/);
+  assert.doesNotMatch(popupCss, /\.ptt-cell-sample\s*{/);
+  assert.doesNotMatch(popupCss, /\.ansi-pair\s*{/);
+  assert.doesNotMatch(popupCss, /\.swatches\s*{/);
+});
+
 test("extension popup routes non-term pages to term.ptt.cc", async () => {
   const popupJs = await readFile("extension/popup.js", "utf8");
   const initBody = extractFunctionBody(popupJs, "init");
@@ -206,7 +245,8 @@ test("extension popup keeps scrolling inside the color list", async () => {
   assert.match(popupCss, /\.color-list\s*{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*align-content:\s*start;[^}]*overflow-x:\s*hidden;[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*stable;/s);
   assert.doesNotMatch(popupCss, /\.color-list\s*{[^}]*max-height:/s);
   assert.match(popupCss, /\.color-button\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
-  assert.match(popupCss, /\.swatches\s*{[^}]*justify-content:\s*start;/s);
+  assert.match(popupCss, /\.preset-preview\s*{[^}]*overflow:\s*hidden;/s);
+  assert.match(popupCss, /\.preset-preview-samples\s*{[^}]*overflow:\s*hidden;/s);
   assert.match(popupJs, /renderColors\(\{ scrollIntoView: true \}\)/);
   assert.match(popupJs, /function renderColors\(\{ scrollIntoView = false \} = \{\}\)/);
   assert.match(popupJs, /if \(scrollIntoView\) \{\s*scrollSelectedPresetIntoView\(\);\s*\}/s);

@@ -1,11 +1,14 @@
 :root {
-  color-scheme: light;
-  --bg: #fffdf8;
-  --panel: #f5f1e8;
-  --ink: #1e2724;
-  --muted: #63706a;
-  --line: #d9d1c4;
-  --accent: #0f766e;
+  color-scheme: dark;
+  --bg: #07100d;
+  --panel: #101a16;
+  --field: #0c1512;
+  --ink: #e8f2ed;
+  --muted: #9ab0a7;
+  --line: #263832;
+  --line-strong: #3f5a51;
+  --accent: #11b89f;
+  --accent-strong: #5ff2d8;
 }
 
 * {
@@ -16,6 +19,7 @@ html,
 body {
   width: 380px;
   height: 600px;
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -23,7 +27,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
 button,
@@ -37,24 +41,27 @@ select {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 14px;
+  padding: 12px;
 }
 
 .header {
   flex: 0 0 auto;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 h1 {
   margin: 0;
-  font-size: 17px;
+  color: var(--ink);
+  font-size: 16px;
   line-height: 1.2;
 }
 
 p {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .controls {
@@ -72,10 +79,10 @@ p {
 .font-field {
   display: grid;
   flex: 0 0 auto;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 5px;
+  margin-bottom: 9px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -83,26 +90,39 @@ p {
 .font-field select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 9px 10px;
-  background: #fff;
+  border-radius: 5px;
+  padding: 8px 9px;
+  background: var(--field);
+  color: var(--ink);
+}
+
+.search input::placeholder {
+  color: #8da097;
+  opacity: 1;
+}
+
+.search input:focus-visible,
+.font-field select:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid rgba(17, 184, 159, 0.36);
+  outline-offset: 1px;
 }
 
 .font-field small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
 }
 
 .current-palette {
   display: grid;
   flex: 0 0 auto;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 7px;
+  margin-bottom: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  padding: 10px;
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 9px;
 }
 
 .palette-header {
@@ -119,15 +139,16 @@ p {
 }
 
 .palette-title span {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--accent-strong);
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .palette-title strong {
   overflow: hidden;
-  font-size: 14px;
+  color: var(--ink);
+  font-size: 13px;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -141,35 +162,35 @@ p {
 }
 
 .modified-badge {
-  border: 1px solid #c9861b;
+  border: 1px solid #e7b84f;
   border-radius: 999px;
   padding: 2px 7px;
-  background: #fff8e6;
-  color: #7a4b00;
-  font-size: 11px;
+  background: #332817;
+  color: #f7d275;
+  font-size: 10px;
   font-weight: 800;
 }
 
 .inline-reset {
   border: 0;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
-  color: var(--accent);
-  font-size: 12px;
+  color: var(--accent-strong);
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
 }
 
 .inline-reset:focus-visible,
 .palette-swatch:focus-visible {
-  outline: 2px solid #006bd6;
+  outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
 
 .palette-strip {
   display: grid;
   grid-template-columns: repeat(16, minmax(0, 1fr));
-  gap: 3px;
+  gap: 4px;
 }
 
 .palette-picker {
@@ -182,8 +203,8 @@ p {
   aspect-ratio: 1;
   width: 100%;
   min-width: 0;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
   padding: 0;
   cursor: pointer;
 }
@@ -201,7 +222,7 @@ p {
 .palette-default-note {
   grid-column: 1 / -1;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -210,7 +231,7 @@ p {
   flex: 1 1 auto;
   min-height: 0;
   align-content: start;
-  gap: 8px;
+  gap: 5px;
   overflow-x: hidden;
   overflow-y: auto;
   padding-right: 0;
@@ -220,51 +241,148 @@ p {
 .color-button {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
   align-items: start;
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  padding: 9px;
-  color: var(--ink);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.color-label {
-  min-width: 0;
+.color-button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
-.color-button[aria-pressed="true"] {
+.color-button[aria-pressed="true"] .preset-preview {
   border-color: var(--accent);
-  background: #edf8f5;
-  box-shadow: inset 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
-.color-button strong {
-  display: block;
-  font-size: 13px;
+.color-button:hover .preset-preview {
+  border-color: var(--line-strong);
 }
 
-.color-button span {
-  color: var(--muted);
-  font-size: 11px;
-  overflow-wrap: anywhere;
+.color-button[aria-pressed="true"]:hover .preset-preview {
+  border-color: var(--accent);
 }
 
-.swatches {
+.color-button:active .preset-preview {
+  transform: translateY(1px);
+}
+
+.preset-preview {
   display: grid;
-  grid-template-columns: repeat(8, 12px);
-  gap: 3px;
-  justify-content: start;
+  min-width: 0;
+  gap: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: #151515;
+  color: #f5f5f5;
+  padding: 7px 8px;
+  transition:
+    border-color 140ms ease-out,
+    box-shadow 140ms ease-out,
+    transform 140ms ease-out;
 }
 
-.swatches i {
-  width: 12px;
-  height: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  border-radius: 3px;
+.preset-preview-default {
+  background: #16201c;
+  color: #eeeeee;
+}
+
+.preset-preview-article {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.preset-preview-marker {
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+
+.preset-preview-date {
+  flex: 0 0 auto;
+  opacity: 0.72;
+  font-size: 10px;
+}
+
+.preset-preview-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-preview-samples {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.preset-preview-source,
+.ptt-color-sample-label {
+  display: inline-grid;
+  flex: 0 0 auto;
+  min-height: 1.35em;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 34%, transparent);
+  border-radius: 2px;
+  font-weight: 800;
+}
+
+.preset-preview-source {
+  max-width: 116px;
+  overflow: hidden;
+  padding: 0 5px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  opacity: 0.78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ptt-color-sample-group {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 1px;
+}
+
+.ptt-color-sample-label {
+  padding: 0 3px;
+  color: color-mix(in srgb, currentColor 84%, transparent);
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.ptt-color-sample {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 1.55em;
+  height: 1.45em;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .actions {
@@ -272,11 +390,11 @@ p {
   flex: 0 0 auto;
   grid-template-columns: 1fr;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .actions button {
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 9px 10px;
   font-weight: 800;
   cursor: pointer;
@@ -285,12 +403,32 @@ p {
 #applyButton {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: #03110e;
 }
 
 #applyButton:disabled {
   border-color: var(--line);
-  background: var(--panel);
+  background: #121b18;
   color: var(--muted);
   cursor: not-allowed;
+}
+
+#applyButton:not(:disabled):hover {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+}
+
+#applyButton:focus-visible {
+  outline: 2px solid rgba(95, 242, 216, 0.5);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset-preview {
+    transition: none;
+  }
+
+  .color-button:active .preset-preview {
+    transform: none;
+  }
 }

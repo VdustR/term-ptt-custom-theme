@@ -60,6 +60,71 @@ const schemeLabels = {
   brightWhite: "Bright White",
 };
 
+const defaultPttScheme = {
+  black: "#000000",
+  red: "#800000",
+  green: "#008000",
+  yellow: "#808000",
+  blue: "#000080",
+  purple: "#800080",
+  cyan: "#008080",
+  white: "#c0c0c0",
+  brightBlack: "#808080",
+  brightRed: "#ff0000",
+  brightGreen: "#00ff00",
+  brightYellow: "#ffff00",
+  brightBlue: "#0000ff",
+  brightPurple: "#ff00ff",
+  brightCyan: "#00ffff",
+  brightWhite: "#ffffff",
+};
+
+const pttBrightForegroundKeys = [
+  "brightBlack",
+  "brightRed",
+  "brightGreen",
+  "brightYellow",
+  "brightBlue",
+  "brightPurple",
+  "brightCyan",
+  "brightWhite",
+];
+
+const pttDarkBackgroundKeys = [
+  "black",
+  "red",
+  "green",
+  "yellow",
+  "blue",
+  "purple",
+  "cyan",
+  "brightBlack",
+];
+
+const pttPreviewSampleGroups = [
+  {
+    label: "黑底",
+    cells: pttBrightForegroundKeys.map((key) => ({
+      text: "文",
+      fgKey: key,
+      bgKey: "black",
+      pttClass: `q${schemeKeys.indexOf(key)} b0/body`,
+    })),
+  },
+  {
+    label: "白字",
+    cells: pttDarkBackgroundKeys.map((key) => {
+      const bgIndex = schemeKeys.indexOf(key);
+      return {
+        text: "白",
+        fgKey: "brightWhite",
+        bgKey: key,
+        pttClass: `q15 ${bgIndex === 0 ? "b0/body" : `b${bgIndex}`}`,
+      };
+    }),
+  },
+];
+
 let activeTab = null;
 let port = null;
 let registry = [];
@@ -272,28 +337,134 @@ function renderColorButton(preset) {
     button.style.fontFamily = fontFamily;
   }
 
-  const label = document.createElement("div");
-  label.className = "color-label";
-  const name = document.createElement("strong");
-  name.textContent = preset.name;
-  const source = document.createElement("span");
-  source.textContent = preset.sourcePath;
-  label.append(name, source);
+  button.append(renderPresetPreview(preset));
+  return button;
+}
 
-  button.append(label);
+function renderPresetPreview(preset) {
+  const preview = document.createElement("div");
+  preview.className = "preset-preview";
 
-  if (preset.scheme) {
-    const swatches = document.createElement("div");
-    swatches.className = "swatches";
-    for (const key of schemeKeys.slice(0, 8)) {
-      const swatch = document.createElement("i");
-      swatch.style.backgroundColor = preset.scheme[key];
-      swatches.append(swatch);
-    }
-    button.append(swatches);
+  if (!preset.scheme) {
+    preview.classList.add("preset-preview-default");
+    preview.style.backgroundColor = defaultPttScheme.black;
+    preview.style.color = defaultPttScheme.brightWhite;
+    preview.append(
+      renderPresetArticleLine({
+        markerColor: defaultPttScheme.brightGreen,
+        title: `[配色] ${preset.name}`,
+        source: renderPresetSource(preset),
+      }),
+      renderPresetSampleLine(preset, defaultPttScheme),
+    );
+    return preview;
   }
 
-  return button;
+  const background = schemeColor(preset.scheme, "black", "#000000");
+  const foreground = schemeColor(preset.scheme, "brightWhite", "#ffffff");
+  preview.style.backgroundColor = background;
+  preview.style.color = foreground;
+
+  preview.append(
+    renderPresetArticleLine({
+      markerColor: schemeColor(preset.scheme, "brightGreen", foreground),
+      title: `[配色] ${preset.name}`,
+      source: renderPresetSource(preset),
+    }),
+    renderPresetSampleLine(preset, preset.scheme),
+  );
+
+  return preview;
+}
+
+function renderPresetArticleLine({ markerColor, title, source }) {
+  const article = document.createElement("div");
+  article.className = "preset-preview-article";
+
+  const marker = document.createElement("span");
+  marker.className = "preset-preview-marker";
+  marker.style.color = markerColor;
+  marker.textContent = "●";
+
+  const date = document.createElement("span");
+  date.className = "preset-preview-date";
+  date.textContent = "6/15";
+
+  const titleNode = document.createElement("strong");
+  titleNode.className = "preset-preview-title";
+  titleNode.textContent = title;
+
+  article.append(marker, date, titleNode);
+  if (source) {
+    article.append(source);
+  }
+  return article;
+}
+
+function renderPresetSampleLine(preset, scheme) {
+  const sample = document.createElement("div");
+  sample.className = "preset-preview-samples";
+  sample.append(...pttPreviewSampleGroups.map((group) => renderColorSampleGroup(group, scheme)));
+  return sample;
+}
+
+function renderColorSampleGroup(groupDefinition, scheme) {
+  const group = document.createElement("span");
+  group.className = "ptt-color-sample-group";
+
+  const labelNode = document.createElement("span");
+  labelNode.className = "ptt-color-sample-label";
+  labelNode.textContent = groupDefinition.label;
+
+  group.append(
+    labelNode,
+    ...groupDefinition.cells.map((cell) => renderPttColorSample(cell, scheme)),
+  );
+  return group;
+}
+
+function renderPttColorSample(cell, scheme) {
+  const foreground = schemeColor(scheme, cell.fgKey, defaultPttScheme[cell.fgKey] ?? "#ffffff");
+  const background = schemeColor(scheme, cell.bgKey, defaultPttScheme[cell.bgKey] ?? "#000000");
+  const sample = document.createElement("span");
+  sample.className = "ptt-color-sample";
+  sample.title = `${cell.pttClass}: ${schemeLabels[cell.fgKey]} on ${schemeLabels[cell.bgKey]}`;
+  sample.setAttribute("aria-label", sample.title);
+  sample.style.color = foreground;
+  sample.style.backgroundColor = background;
+  sample.textContent = cell.text;
+
+  return sample;
+}
+
+function renderPresetSource(preset) {
+  const source = document.createElement("span");
+  const sourcePath = preset.sourcePath ?? "term.ptt.cc default";
+  source.className = "preset-preview-source";
+  source.textContent = formatPresetSource(sourcePath);
+  source.title = sourcePath;
+  return source;
+}
+
+function formatPresetSource(sourcePath) {
+  if (!sourcePath) {
+    return "Term PTT";
+  }
+
+  if (sourcePath.startsWith("term.ptt.cc")) {
+    return "Term PTT";
+  }
+
+  const [source] = sourcePath.split("/");
+  if (source === "windowsterminal") {
+    return "WinTerm";
+  }
+
+  return source || "Term PTT";
+}
+
+function schemeColor(scheme, schemeKey, fallback) {
+  return normalizeHex(scheme?.[schemeKey]) ?? fallback;
 }
 
 function selectPreset(preset) {
