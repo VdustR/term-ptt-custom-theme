@@ -2,7 +2,7 @@
 
 ## Register
 
-product
+term-ptt-custom-theme
 
 ## Users
 
