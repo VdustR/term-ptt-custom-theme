@@ -71,6 +71,15 @@ test("extension color utility rejects missing ANSI scheme keys", async () => {
   );
 });
 
+test("extension color utility rejects missing scheme objects", async () => {
+  const { schemeToCssVariables } = await loadExtensionColorUtils();
+
+  assert.throws(
+    () => schemeToCssVariables(null),
+    /Scheme is required/,
+  );
+});
+
 test("extension color utility rejects unsupported ANSI scheme keys", async () => {
   const { schemeToCssVariables } = await loadExtensionColorUtils();
 

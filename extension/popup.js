@@ -69,7 +69,9 @@ let savedScheme = null;
 let selectedMetadata = {};
 let selectedFont = null;
 let savedFont = null;
+let persistDraftTimeout = null;
 
+window.addEventListener("pagehide", flushPendingDraftWrite);
 init();
 
 async function init() {
@@ -85,7 +87,7 @@ async function init() {
     fetch("assets/colors.json"),
     fetch("assets/fonts.json"),
     chrome.storage.sync.get(["selectedScheme", "selectedFont"]),
-    chrome.storage.session.get(["appearanceDraft"]),
+    getAppearanceDraft(),
   ]);
   const colorsRegistry = await colorsResponse.json();
   const fontsRegistry = await fontsResponse.json();
@@ -118,9 +120,15 @@ async function init() {
   bindEvents();
   renderFonts();
   renderCurrentPalette();
-  renderColors();
+  renderColors({ scrollIntoView: true });
   updateApplyButton();
   previewSelectedAppearance();
+}
+
+function getAppearanceDraft() {
+  return chrome.storage.session
+    ? chrome.storage.session.get(["appearanceDraft"])
+    : Promise.resolve({});
 }
 
 function bindEvents() {
@@ -207,7 +215,7 @@ function renderPaletteSwatchButton(key) {
   return picker;
 }
 
-function renderColors() {
+function renderColors({ scrollIntoView = false } = {}) {
   const query = searchInput.value.trim().toLowerCase();
   const matches = [defaultColorsPreset, ...registry].filter((preset) => {
     const haystack = `${preset.name} ${preset.sourcePath ?? ""}`.toLowerCase();
@@ -215,7 +223,9 @@ function renderColors() {
   });
 
   colorListNode.replaceChildren(...matches.map(renderColorButton));
-  scrollSelectedPresetIntoView();
+  if (scrollIntoView) {
+    scrollSelectedPresetIntoView();
+  }
 }
 
 function renderColorButton(preset) {
@@ -262,7 +272,7 @@ function selectPreset(preset) {
   renderCurrentPalette();
   updateApplyButton();
   renderColors();
-  queuePersistDraft();
+  queuePersistDraft({ immediate: true });
   sendSelectedSchemePreview();
 }
 
@@ -271,7 +281,7 @@ function selectFont() {
   updateFontStatus();
   updateApplyButton();
   renderColors();
-  queuePersistDraft();
+  queuePersistDraft({ immediate: true });
   sendSelectedFontPreview();
 }
 
@@ -295,24 +305,26 @@ function handleColorPickerInput(event) {
     return;
   }
 
-  updateSchemeColor(key, value);
+  if (updateSchemeColor(key, value)) {
+    queuePersistDraft({ immediate: event.type === "change" });
+  }
 }
 
 function updateSchemeColor(key, value) {
   if (!selectedScheme) {
-    return;
+    return false;
   }
 
   if (selectedScheme?.[key] === value) {
-    return;
+    return false;
   }
 
   selectedScheme = { ...selectedScheme, [key]: value };
   syncPaletteColor(key, value);
   updatePaletteModifiedState();
   updateApplyButton();
-  queuePersistDraft();
   sendPreviewMessage({ type: "preview-scheme", preset: selectedSchemePayload() });
+  return true;
 }
 
 function syncPaletteColor(key, value) {
@@ -344,7 +356,7 @@ function resetPaletteToBase() {
   selectedMetadata = selectedPreset.metadata ?? {};
   renderCurrentPalette();
   updateApplyButton();
-  queuePersistDraft();
+  queuePersistDraft({ immediate: true });
   sendPreviewMessage({ type: "preview-scheme", preset: selectedSchemePayload() });
   statusNode.textContent = `Reset ${selectedPreset.name} colors`;
 }
@@ -376,6 +388,8 @@ async function applySelectedPreset() {
     removeKeys.push("selectedFont");
   }
 
+  clearPendingDraftWrite();
+
   try {
     if (Object.keys(setValues).length > 0) {
       await chrome.storage.sync.set(setValues);
@@ -383,7 +397,9 @@ async function applySelectedPreset() {
     if (removeKeys.length > 0) {
       await chrome.storage.sync.remove(removeKeys);
     }
-    await chrome.storage.session.remove(["appearanceDraft"]);
+    if (chrome.storage.session) {
+      await chrome.storage.session.remove(["appearanceDraft"]);
+    }
   } catch {
     statusNode.textContent = "Could not save appearance.";
     updateApplyButton();
@@ -442,14 +458,50 @@ function sendSelectedFontApply() {
   sendPreviewMessage({ type: "apply-clear-font" });
 }
 
-function queuePersistDraft() {
+function queuePersistDraft({ immediate = false } = {}) {
+  if (!chrome.storage.session) {
+    return;
+  }
+
+  clearPendingDraftWrite();
+
+  if (immediate) {
+    void persistDraftSafely();
+    return;
+  }
+
+  persistDraftTimeout = setTimeout(() => {
+    persistDraftTimeout = null;
+    void persistDraftSafely();
+  }, 150);
+}
+
+function clearPendingDraftWrite() {
+  if (!persistDraftTimeout) {
+    return;
+  }
+
+  clearTimeout(persistDraftTimeout);
+  persistDraftTimeout = null;
+}
+
+function flushPendingDraftWrite() {
+  if (!persistDraftTimeout) {
+    return;
+  }
+
+  clearPendingDraftWrite();
+  void persistDraftSafely();
+}
+
+function persistDraftSafely() {
   persistDraft().catch(() => {
     statusNode.textContent = "Could not save draft.";
   });
 }
 
 async function persistDraft() {
-  if (!selectedPreset) {
+  if (!selectedPreset || !chrome.storage.session) {
     return;
   }
 

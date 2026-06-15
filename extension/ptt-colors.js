@@ -54,7 +54,11 @@
   }
 
   function assertExactSchemeKeys(scheme) {
-    for (const key of Object.keys(scheme ?? {})) {
+    if (!scheme || typeof scheme !== "object") {
+      throw new Error("Scheme is required");
+    }
+
+    for (const key of Object.keys(scheme)) {
       if (!supportedSchemeKeys.has(key)) {
         throw new Error(`Unsupported ANSI scheme color key: ${key}`);
       }

@@ -42,8 +42,10 @@ test("extension popup browses colors and fonts inside the extension", async () =
   assert.match(popupJs, /TermPttAppearanceState\.isModifiedScheme\(selectedScheme, selectedPreset\?\.scheme\)/);
   assert.match(popupJs, /chrome\.storage\.sync\.get\(\[/);
   assert.match(popupJs, /"selectedScheme"/);
-  assert.match(popupJs, /chrome\.storage\.session\.get\(\["appearanceDraft"\]\)/);
+  assert.match(popupJs, /getAppearanceDraft\(\)/);
+  assert.match(popupJs, /chrome\.storage\.session\s*\?\s*chrome\.storage\.session\.get\(\["appearanceDraft"\]\)\s*:\s*Promise\.resolve\(\{\}\)/);
   assert.match(popupJs, /chrome\.storage\.session\.set\(\{ appearanceDraft/);
+  assert.match(popupJs, /if \(chrome\.storage\.session\) \{\s*await chrome\.storage\.session\.remove\(\["appearanceDraft"\]\);\s*\}/s);
   assert.match(popupJs, /TermPttAppearanceState\.createInitialAppearanceState/);
   assert.match(popupJs, /preview-scheme/);
   assert.match(popupJs, /preview-font/);
@@ -55,7 +57,6 @@ test("extension popup browses colors and fonts inside the extension", async () =
   assert.match(popupJs, /applyButton\.disabled = true;/);
   assert.match(popupJs, /selectedScheme: storedScheme/);
   assert.match(popupJs, /chrome\.storage\.sync\.remove\(removeKeys\)/);
-  assert.match(popupJs, /chrome\.storage\.session\.remove\(\["appearanceDraft"\]\)/);
   assert.match(popupJs, /savedPreset = selectedPreset;/);
   assert.match(popupJs, /savedScheme = selectedScheme;/);
   assert.match(popupJs, /savedFont = selectedFont;/);
@@ -78,6 +79,7 @@ test("extension popup opens the color picker directly from current palette swatc
   assert.match(popupJs, /button\.className = "palette-swatch"/);
   assert.match(popupJs, /input\.className = "palette-color-input"/);
   assert.match(popupJs, /input\.type = "color"/);
+  assert.match(popupJs, /queuePersistDraft\(\{ immediate: event\.type === "change" \}\)/);
   assert.match(popupJs, /showPicker/);
   assert.match(popupJs, /input\.click\(\)/);
   assert.match(popupJs, /palette-default-note/);
@@ -110,4 +112,11 @@ test("extension popup keeps scrolling inside the color list", async () => {
   assert.doesNotMatch(popupCss, /\.color-list\s*{[^}]*max-height:/s);
   assert.match(popupCss, /\.color-button\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
   assert.match(popupCss, /\.swatches\s*{[^}]*justify-content:\s*start;/s);
+  assert.match(popupJs, /renderColors\(\{ scrollIntoView: true \}\)/);
+  assert.match(popupJs, /function renderColors\(\{ scrollIntoView = false \} = \{\}\)/);
+  assert.match(popupJs, /if \(scrollIntoView\) \{\s*scrollSelectedPresetIntoView\(\);\s*\}/s);
+  assert.doesNotMatch(popupJs, /colorListNode\.replaceChildren\(\.\.\.matches\.map\(renderColorButton\)\);\s*scrollSelectedPresetIntoView\(\);/s);
+  assert.match(popupJs, /let persistDraftTimeout = null;/);
+  assert.match(popupJs, /clearPendingDraftWrite\(\)/);
+  assert.match(popupJs, /window\.addEventListener\("pagehide", flushPendingDraftWrite\)/);
 });
