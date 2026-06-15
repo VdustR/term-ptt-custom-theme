@@ -11,12 +11,61 @@ function extractFunctionBody(source, functionName) {
   assert.notEqual(bodyStart, -1, `${functionName}() should have a body`);
 
   let depth = 0;
+  let stringQuote = null;
+  let commentType = null;
   for (let index = bodyStart; index < source.length; index += 1) {
-    if (source[index] === "{") {
+    const char = source[index];
+    const nextChar = source[index + 1];
+
+    if (commentType === "line") {
+      if (char === "\n") {
+        commentType = null;
+      }
+      continue;
+    }
+
+    if (commentType === "block") {
+      if (char === "*" && nextChar === "/") {
+        commentType = null;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (stringQuote) {
+      if (char === "\\") {
+        index += 1;
+        continue;
+      }
+
+      if (char === stringQuote) {
+        stringQuote = null;
+      }
+      continue;
+    }
+
+    if (char === "/" && nextChar === "/") {
+      commentType = "line";
+      index += 1;
+      continue;
+    }
+
+    if (char === "/" && nextChar === "*") {
+      commentType = "block";
+      index += 1;
+      continue;
+    }
+
+    if (char === "'" || char === '"' || char === "`") {
+      stringQuote = char;
+      continue;
+    }
+
+    if (char === "{") {
       depth += 1;
     }
 
-    if (source[index] === "}") {
+    if (char === "}") {
       depth -= 1;
     }
 
