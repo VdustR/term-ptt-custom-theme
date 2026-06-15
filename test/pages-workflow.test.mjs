@@ -193,6 +193,7 @@ test("extension popup renders presets as PTT-style color previews", async () => 
   assert.match(popupJs, /schemeColor\(preset\.scheme, "black"/);
   assert.match(popupJs, /schemeColor\(preset\.scheme, "brightWhite"/);
   assert.match(popupJs, /preset-preview-default/);
+  assert.match(popupJs, /marker\.setAttribute\("aria-hidden", "true"\)/);
   assert.doesNotMatch(popupJs, /textShadow/);
   assert.doesNotMatch(popupJs, /標題|底紅|底白|爆|推/);
   assert.doesNotMatch(popupJs, /renderAnsiForeground\("紅"/);
@@ -206,6 +207,8 @@ test("extension popup renders presets as PTT-style color previews", async () => 
   assert.match(popupCss, /\.ptt-color-sample-group\s*{/);
   assert.match(popupCss, /\.ptt-color-sample-label\s*{/);
   assert.match(popupCss, /\.ptt-color-sample\s*{/);
+  assert.match(popupCss, /color-mix\(in srgb, var\(--accent\) 36%, transparent\)/);
+  assert.doesNotMatch(popupCss, /rgba\(17,\s*184,\s*159/);
   assert.doesNotMatch(popupCss, /\.ptt-cell-sample\s*{/);
   assert.doesNotMatch(popupCss, /\.ansi-pair\s*{/);
   assert.doesNotMatch(popupCss, /\.swatches\s*{/);

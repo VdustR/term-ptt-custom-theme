@@ -25,7 +25,6 @@ body {
 
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--ink);
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
@@ -104,7 +103,7 @@ p {
 .search input:focus-visible,
 .font-field select:focus-visible {
   border-color: var(--accent);
-  outline: 2px solid rgba(17, 184, 159, 0.36);
+  outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
   outline-offset: 1px;
 }
 
@@ -290,11 +289,6 @@ p {
     transform 140ms ease-out;
 }
 
-.preset-preview-default {
-  background: #16201c;
-  color: #eeeeee;
-}
-
 .preset-preview-article {
   display: flex;
   min-width: 0;
@@ -419,7 +413,7 @@ p {
 }
 
 #applyButton:focus-visible {
-  outline: 2px solid rgba(95, 242, 216, 0.5);
+  outline: 2px solid color-mix(in srgb, var(--accent-strong) 50%, transparent);
   outline-offset: 2px;
 }
 

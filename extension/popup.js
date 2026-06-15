@@ -384,6 +384,7 @@ function renderPresetArticleLine({ markerColor, title, source }) {
   const marker = document.createElement("span");
   marker.className = "preset-preview-marker";
   marker.style.color = markerColor;
+  marker.setAttribute("aria-hidden", "true");
   marker.textContent = "●";
 
   const date = document.createElement("span");
