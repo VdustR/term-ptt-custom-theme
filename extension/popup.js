@@ -271,9 +271,17 @@ function selectPreset(preset) {
   selectedMetadata = preset.metadata ?? {};
   renderCurrentPalette();
   updateApplyButton();
-  renderColors();
+  syncSelectedPresetButtonState();
   queuePersistDraft({ immediate: true });
   sendSelectedSchemePreview();
+}
+
+function syncSelectedPresetButtonState() {
+  const selectedPresetId = selectedPreset?.id ?? "";
+
+  for (const button of colorListNode.querySelectorAll("[data-preset-id]")) {
+    button.setAttribute("aria-pressed", String(button.dataset.presetId === selectedPresetId));
+  }
 }
 
 function selectFont() {

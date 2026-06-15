@@ -3,6 +3,31 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 
+function extractFunctionBody(source, functionName) {
+  const signatureIndex = source.indexOf(`function ${functionName}(`);
+  assert.notEqual(signatureIndex, -1, `${functionName}() should exist`);
+
+  const bodyStart = source.indexOf("{", signatureIndex);
+  assert.notEqual(bodyStart, -1, `${functionName}() should have a body`);
+
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === "{") {
+      depth += 1;
+    }
+
+    if (source[index] === "}") {
+      depth -= 1;
+    }
+
+    if (depth === 0) {
+      return source.slice(bodyStart + 1, index);
+    }
+  }
+
+  assert.fail(`${functionName}() body should close`);
+}
+
 test("extension-only scope does not include marketplace handoff surfaces", async () => {
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
   const manifest = JSON.parse(await readFile("extension/manifest.json", "utf8"));
@@ -101,6 +126,7 @@ test("extension popup opens the color picker directly from current palette swatc
 test("extension popup keeps scrolling inside the color list", async () => {
   const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");
+  const selectPresetBody = extractFunctionBody(popupJs, "selectPreset");
 
   assert.doesNotMatch(popupJs, /classList\.add\("has-controls"\)/);
   assert.doesNotMatch(popupCss, /body\.has-controls/);
@@ -115,6 +141,9 @@ test("extension popup keeps scrolling inside the color list", async () => {
   assert.match(popupJs, /renderColors\(\{ scrollIntoView: true \}\)/);
   assert.match(popupJs, /function renderColors\(\{ scrollIntoView = false \} = \{\}\)/);
   assert.match(popupJs, /if \(scrollIntoView\) \{\s*scrollSelectedPresetIntoView\(\);\s*\}/s);
+  assert.match(popupJs, /function syncSelectedPresetButtonState\(\)/);
+  assert.match(selectPresetBody, /syncSelectedPresetButtonState\(\)/);
+  assert.doesNotMatch(selectPresetBody, /renderColors\(/);
   assert.doesNotMatch(popupJs, /colorListNode\.replaceChildren\(\.\.\.matches\.map\(renderColorButton\)\);\s*scrollSelectedPresetIntoView\(\);/s);
   assert.match(popupJs, /let persistDraftTimeout = null;/);
   assert.match(popupJs, /clearPendingDraftWrite\(\)/);
