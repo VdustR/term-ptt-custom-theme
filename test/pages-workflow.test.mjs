@@ -172,6 +172,26 @@ test("extension popup opens the color picker directly from current palette swatc
   assert.doesNotMatch(popupCss, /:has\(\.palette-editor/);
 });
 
+test("extension popup routes non-term pages to term.ptt.cc", async () => {
+  const popupJs = await readFile("extension/popup.js", "utf8");
+  const initBody = extractFunctionBody(popupJs, "init");
+  const routeBody = extractFunctionBody(popupJs, "routeToTermPtt");
+
+  assert.match(popupJs, /const TERM_PTT_URL = "https:\/\/term\.ptt\.cc\/";/);
+  assert.match(popupJs, /const TERM_PTT_PATTERN = "https:\/\/term\.ptt\.cc\/\*";/);
+  assert.match(popupJs, /function isTermPttTab\(tab\)/);
+  assert.match(initBody, /if \(!isTermPttTab\(activeTab\)\) \{\s*await routeToTermPtt\(\);\s*return;\s*\}/s);
+  assert.match(routeBody, /chrome\.tabs\.query\(\{ url: TERM_PTT_PATTERN \}\)/);
+  assert.match(routeBody, /chrome\.tabs\.update\(targetTab\.id, \{ active: true \}\)/);
+  assert.match(
+    routeBody,
+    /if \(typeof targetTab\.windowId === "number" && chrome\.windows\?\.update\) \{\s*try \{\s*await chrome\.windows\.update\(targetTab\.windowId, \{ focused: true \}\);\s*\} catch \{/s,
+  );
+  assert.match(routeBody, /chrome\.tabs\.create\(\{ url: TERM_PTT_URL, active: true \}\)/);
+  assert.match(routeBody, /window\.close\(\)/);
+  assert.match(routeBody, /statusNode\.textContent = "Could not open term\.ptt\.cc\."/);
+});
+
 test("extension popup keeps scrolling inside the color list", async () => {
   const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");

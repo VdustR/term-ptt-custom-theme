@@ -25,6 +25,9 @@ test("verify script validates the packaged extension zip after packaging", async
   assert.match(verifierScript, /assets\/fonts\.json/);
   assert.match(verifierScript, /extractPopupLocalReferences/);
   assert.match(packageScript, /Missing required command/);
+  assert.match(packageScript, /"\.DS_Store"/);
+  assert.match(packageScript, /"\*\/\.DS_Store"/);
+  assert.match(packageScript, /"__MACOSX\/\*"/);
   assert.match(readme, /requires the system `zip` command/);
 });
 

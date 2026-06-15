@@ -10,6 +10,8 @@ const paletteStripNode = document.getElementById("paletteStrip");
 const colorListNode = document.getElementById("colorList");
 const applyButton = document.getElementById("applyButton");
 
+const TERM_PTT_URL = "https://term.ptt.cc/";
+const TERM_PTT_PATTERN = "https://term.ptt.cc/*";
 const DEFAULT_COLORS_ID = "term-ptt-default";
 const DEFAULT_FONT_ID = "term-ptt-default";
 const defaultColorsPreset = TermPttAppearanceState.defaultColorsPreset ?? {
@@ -78,8 +80,8 @@ async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTab = tab;
 
-  if (!activeTab?.id || !activeTab.url?.startsWith("https://term.ptt.cc/")) {
-    statusNode.textContent = "Open term.ptt.cc to preview colors.";
+  if (!isTermPttTab(activeTab)) {
+    await routeToTermPtt();
     return;
   }
 
@@ -123,6 +125,35 @@ async function init() {
   renderColors({ scrollIntoView: true });
   updateApplyButton();
   previewSelectedAppearance();
+}
+
+function isTermPttTab(tab) {
+  return Boolean(tab?.id && tab.url?.startsWith(TERM_PTT_URL));
+}
+
+async function routeToTermPtt() {
+  statusNode.textContent = "Opening term.ptt.cc...";
+
+  try {
+    const [targetTab] = await chrome.tabs.query({ url: TERM_PTT_PATTERN });
+
+    if (targetTab?.id) {
+      await chrome.tabs.update(targetTab.id, { active: true });
+      if (typeof targetTab.windowId === "number" && chrome.windows?.update) {
+        try {
+          await chrome.windows.update(targetTab.windowId, { focused: true });
+        } catch {
+          // Window focus is best-effort; the tab activation above is the primary route.
+        }
+      }
+    } else {
+      await chrome.tabs.create({ url: TERM_PTT_URL, active: true });
+    }
+
+    window.close();
+  } catch {
+    statusNode.textContent = "Could not open term.ptt.cc.";
+  }
 }
 
 function getAppearanceDraft() {

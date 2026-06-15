@@ -7,7 +7,9 @@ const outputPath = path.resolve("dist/term-ptt-custom-theme.zip");
 await mkdir(path.dirname(outputPath), { recursive: true });
 await rm(outputPath, { force: true });
 
-await run("zip", ["-qr", outputPath, "."], { cwd: "extension" });
+await run("zip", ["-qr", outputPath, ".", "-x", ".DS_Store", "*/.DS_Store", "__MACOSX/*"], {
+  cwd: "extension",
+});
 
 console.log(`Packaged extension to ${outputPath}`);
 
