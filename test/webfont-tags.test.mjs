@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 async function loadWebfontTagUtils() {
   const code = await readFile("extension/ptt-webfont-tags.js", "utf8");
-  const context = { globalThis: {} };
+  const context = { globalThis: {}, URL };
   context.globalThis = context;
   vm.runInNewContext(code, context, { filename: "extension/ptt-webfont-tags.js" });
   return context.TermPttWebfontTags;
@@ -15,7 +15,7 @@ test("webfont tag utility accepts font-face style and link tags", async () => {
   const { parseWebfontTags } = await loadWebfontTagUtils();
   const result = parseWebfontTags(`
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://example.com/fonts.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC">
     <link rel="preload" as="font" href="https://example.com/font.woff2" crossorigin="anonymous">
     <style>
       @font-face {
@@ -62,6 +62,10 @@ test("webfont tag utility rejects unsafe or unsupported link shapes", async () =
   assert.match(
     parseWebfontTags('<link rel="stylesheet" href="http://example.com/fonts.css">').errors.join(" "),
     /href must use https/,
+  );
+  assert.match(
+    parseWebfontTags('<link rel="stylesheet" href="https://example.com/fonts.css">').errors.join(" "),
+    /domain example\.com is not trusted/,
   );
   assert.match(
     parseWebfontTags('<link rel="preload" as="font" href="https://example.com/font.woff2" onload="alert(1)">').errors.join(

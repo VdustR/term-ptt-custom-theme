@@ -87,7 +87,7 @@ Allows the content script and stylesheet to run only on `term.ptt.cc`, where the
 
 No remote JavaScript or WebAssembly is executed by the extension.
 
-The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided webfont tags are restricted to trusted HTTPS font stylesheet links, inline `@font-face` CSS, preconnect links, and font preload links; script, arbitrary HTML tags, event handler attributes, non-HTTPS links, and inline style rules outside `@font-face` are rejected.
+The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided webfont tags are restricted to trusted HTTPS font stylesheet links from `fonts.googleapis.com`, `fonts.bunny.net`, or `use.typekit.net`, inline `@font-face` CSS, preconnect links, and font preload links; script, arbitrary HTML tags, event handler attributes, non-HTTPS links, and inline style rules outside `@font-face` are rejected.
 
 ## Data Use
 

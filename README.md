@@ -198,7 +198,7 @@ The extension:
 - Persists the selected color scheme and webfont tags with `chrome.storage.sync` after Apply.
 - Generates PNG extension icons during `pnpm build`.
 
-Webfont tags load user-supplied webfont resources through trusted font stylesheet links, inline `@font-face` rules, preconnect hints, or font preloads. The extension does not apply `font-family`; choose the loaded family in `term.ptt.cc` settings. Script, iframe, image, arbitrary HTML tags, non-HTTPS links, event handler attributes, and inline style rules outside `@font-face` are rejected.
+Webfont tags load user-supplied webfont resources through trusted font stylesheet links, inline `@font-face` rules, preconnect hints, or font preloads. Stylesheet links are limited to `fonts.googleapis.com`, `fonts.bunny.net`, and `use.typekit.net`. The extension does not apply `font-family`; choose the loaded family in `term.ptt.cc` settings. Script, iframe, image, arbitrary HTML tags, non-HTTPS links, event handler attributes, and inline style rules outside `@font-face` are rejected.
 
 ### Current Limits
 

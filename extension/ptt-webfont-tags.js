@@ -11,6 +11,7 @@
   ]);
   const allowedLinkRels = new Set(["dns-prefetch", "preconnect", "preload", "stylesheet"]);
   const allowedPreloadAsValues = new Set(["font"]);
+  const trustedStylesheetDomains = new Set(["fonts.googleapis.com", "fonts.bunny.net", "use.typekit.net"]);
   const allowedCrossoriginValues = new Set(["", "anonymous", "use-credentials"]);
   const allowedReferrerPolicies = new Set([
     "",
@@ -189,6 +190,15 @@
       errors.push('<link rel="preload"> must use as="font".');
     }
 
+    if (relTokens.includes("stylesheet")) {
+      const hostname = getHostname(href);
+      if (!hostname) {
+        errors.push("<link> href must be a valid URL.");
+      } else if (!trustedStylesheetDomains.has(hostname)) {
+        errors.push(`<link rel="stylesheet"> domain ${hostname} is not trusted.`);
+      }
+    }
+
     const crossorigin = (attrs.crossorigin ?? "").toLowerCase();
     if (!allowedCrossoriginValues.has(crossorigin)) {
       errors.push("<link> crossorigin must be anonymous or use-credentials.");
@@ -215,6 +225,14 @@
     }
 
     return normalized;
+  }
+
+  function getHostname(href) {
+    try {
+      return new URL(href).hostname.toLowerCase();
+    } catch {
+      return "";
+    }
   }
 
   function uniqueErrors(errors) {
