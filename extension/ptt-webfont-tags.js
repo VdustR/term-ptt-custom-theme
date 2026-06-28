@@ -9,7 +9,7 @@
     "title",
     "type",
   ]);
-  const allowedLinkRels = new Set(["dns-prefetch", "preconnect", "preload"]);
+  const allowedLinkRels = new Set(["dns-prefetch", "preconnect", "preload", "stylesheet"]);
   const allowedPreloadAsValues = new Set(["font"]);
   const allowedCrossoriginValues = new Set(["", "anonymous", "use-credentials"]);
   const allowedReferrerPolicies = new Set([
@@ -175,7 +175,7 @@
       .split(/\s+/)
       .filter(Boolean);
     if (relTokens.length === 0 || !relTokens.some((rel) => allowedLinkRels.has(rel))) {
-      errors.push("<link> rel must be preconnect, preload, or dns-prefetch.");
+      errors.push("<link> rel must be stylesheet, preconnect, preload, or dns-prefetch.");
     }
 
     for (const rel of relTokens) {

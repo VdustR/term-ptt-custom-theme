@@ -44,7 +44,7 @@ Expected result:
 
 - Colors change on the real `term.ptt.cc` terminal.
 - ANSI foreground and background colors remain readable.
-- Webfont tags are limited to inline `@font-face` CSS and font-related link tags.
+- Webfont tags are limited to trusted font stylesheet links, inline `@font-face` CSS, and font-related link tags.
 - Popup controls stay usable and do not show a connection error on `term.ptt.cc`.
 - The popup shows a clear unavailable state on non-PTT tabs.
 
