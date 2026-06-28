@@ -2,8 +2,12 @@ const statusNode = document.getElementById("status");
 const repositoryButton = document.getElementById("repositoryButton");
 const controlsNode = document.getElementById("controls");
 const searchInput = document.getElementById("searchInput");
-const fontSelect = document.getElementById("fontSelect");
-const fontStatus = document.getElementById("fontStatus");
+const webfontTagsPanel = document.getElementById("webfontTagsPanel");
+const webfontTagsInput = document.getElementById("webfontTagsInput");
+const webfontTagsSummary = document.getElementById("webfontTagsSummary");
+const webfontTagsStatus = document.getElementById("webfontTagsStatus");
+const insertWebfontTemplateButton = document.getElementById("insertWebfontTemplateButton");
+const clearWebfontTagsButton = document.getElementById("clearWebfontTagsButton");
 const currentPaletteNameNode = document.getElementById("currentPaletteName");
 const modifiedBadgeNode = document.getElementById("modifiedBadge");
 const resetButton = document.getElementById("resetButton");
@@ -15,7 +19,13 @@ const REPOSITORY_URL = "https://github.com/VdustR/term-ptt-custom-theme";
 const TERM_PTT_URL = "https://term.ptt.cc/";
 const TERM_PTT_PATTERN = "https://term.ptt.cc/*";
 const DEFAULT_COLORS_ID = "term-ptt-default";
-const DEFAULT_FONT_ID = "term-ptt-default";
+const WEBFONT_TEMPLATE = `<style>
+@font-face {
+  font-family: "My PTT Font";
+  src: url("https://example.com/my-font.woff2") format("woff2");
+  font-display: swap;
+}
+</style>`;
 const defaultColorsPreset = TermPttAppearanceState.defaultColorsPreset ?? {
   id: DEFAULT_COLORS_ID,
   name: "Term PTT Default",
@@ -130,15 +140,16 @@ const pttPreviewSampleGroups = [
 let activeTab = null;
 let port = null;
 let registry = [];
-let fontRegistry = [];
 let selectedPreset = null;
 let savedPreset = null;
 let selectedScheme = null;
 let savedScheme = null;
 let selectedMetadata = {};
-let selectedFont = null;
-let savedFont = null;
+let selectedWebfontTags = "";
+let savedWebfontTags = "";
+let webfontTagsValidation = TermPttWebfontTags.parseWebfontTags("");
 let persistDraftTimeout = null;
+let webfontPreviewTimeout = null;
 
 repositoryButton.addEventListener("click", openRepository);
 window.addEventListener("pagehide", flushPendingDraftWrite);
@@ -153,20 +164,16 @@ async function init() {
     return;
   }
 
-  const [colorsResponse, fontsResponse, savedStorage, draftStorage] = await Promise.all([
+  const [colorsResponse, savedStorage, draftStorage] = await Promise.all([
     fetch("assets/colors.json"),
-    fetch("assets/fonts.json"),
-    chrome.storage.sync.get(["selectedScheme", "selectedFont"]),
+    chrome.storage.sync.get(["selectedScheme", "selectedWebfontTags"]),
     getAppearanceDraft(),
   ]);
   const colorsRegistry = await colorsResponse.json();
-  const fontsRegistry = await fontsResponse.json();
   registry = colorsRegistry.colors;
-  fontRegistry = fontsRegistry.fonts;
 
   const initialState = TermPttAppearanceState.createInitialAppearanceState({
     registry,
-    fontRegistry,
     storage: { ...savedStorage, ...draftStorage },
   });
 
@@ -175,20 +182,23 @@ async function init() {
     ? (findPreset(savedStoredScheme.basePresetId ?? savedStoredScheme.id) ?? savedStoredScheme)
     : defaultColorsPreset;
   savedScheme = savedStoredScheme?.scheme ? copyScheme(savedStoredScheme.scheme) : null;
-  savedFont = reconcileFont(savedStorage.selectedFont ?? null);
+  savedWebfontTags =
+    typeof savedStorage.selectedWebfontTags === "string" ? savedStorage.selectedWebfontTags : "";
 
   connectPreviewPort();
 
   selectedPreset = initialState.selectedPreset ?? defaultColorsPreset;
   selectedScheme = initialState.selectedScheme ? copyScheme(initialState.selectedScheme) : null;
   selectedMetadata = initialState.selectedMetadata ?? selectedPreset?.metadata ?? {};
-  selectedFont = initialState.selectedFont ?? null;
+  selectedWebfontTags = initialState.selectedWebfontTags ?? "";
   searchInput.value = initialState.query;
+  webfontTagsInput.value = selectedWebfontTags;
+  webfontTagsPanel.open = selectedWebfontTags.trim() !== "";
 
-  statusNode.textContent = `${registry.length} colors and ${fontRegistry.length} fonts available`;
+  statusNode.textContent = `${registry.length} color presets available`;
   controlsNode.hidden = false;
   bindEvents();
-  renderFonts();
+  updateWebfontTagsStatus();
   renderCurrentPalette();
   renderColors({ scrollIntoView: true });
   updateApplyButton();
@@ -241,7 +251,9 @@ function getAppearanceDraft() {
 
 function bindEvents() {
   searchInput.addEventListener("input", handleSearchInput);
-  fontSelect.addEventListener("change", selectFont);
+  webfontTagsInput.addEventListener("input", handleWebfontTagsInput);
+  insertWebfontTemplateButton.addEventListener("click", insertWebfontTemplate);
+  clearWebfontTagsButton.addEventListener("click", clearWebfontTagsInput);
   resetButton.addEventListener("click", resetPaletteToBase);
   applyButton.addEventListener("click", applySelectedPreset);
 }
@@ -249,26 +261,6 @@ function bindEvents() {
 function handleSearchInput() {
   renderColors();
   queuePersistDraft();
-}
-
-function renderFonts() {
-  fontSelect.replaceChildren(renderDefaultFontOption(), ...fontRegistry.map(renderFontOption));
-  fontSelect.value = selectedFont?.id ?? DEFAULT_FONT_ID;
-  updateFontStatus();
-}
-
-function renderDefaultFontOption() {
-  const option = document.createElement("option");
-  option.value = DEFAULT_FONT_ID;
-  option.textContent = "Term PTT Default";
-  return option;
-}
-
-function renderFontOption(font) {
-  const option = document.createElement("option");
-  option.value = font.id;
-  option.textContent = font.status === "planned" ? `${font.name} (planned)` : font.name;
-  return option;
 }
 
 function renderCurrentPalette() {
@@ -343,11 +335,6 @@ function renderColorButton(preset) {
   button.dataset.presetId = preset.id;
   button.setAttribute("aria-pressed", String(preset.id === selectedPreset?.id));
   button.addEventListener("click", () => selectPreset(preset));
-
-  const fontFamily = fontStackToCss(selectedFont?.fallbackStack ?? []);
-  if (fontFamily) {
-    button.style.fontFamily = fontFamily;
-  }
 
   button.append(renderPresetPreview(preset));
   return button;
@@ -468,13 +455,52 @@ function syncSelectedPresetButtonState() {
   }
 }
 
-function selectFont() {
-  selectedFont = fontSelect.value === DEFAULT_FONT_ID ? null : findFont(fontSelect.value);
-  updateFontStatus();
+function handleWebfontTagsInput() {
+  selectedWebfontTags = webfontTagsInput.value;
+  updateWebfontTagsStatus();
   updateApplyButton();
-  renderColors();
+  queuePersistDraft();
+  queueWebfontTagsPreview();
+}
+
+function insertWebfontTemplate() {
+  insertIntoWebfontTags(WEBFONT_TEMPLATE);
+}
+
+function clearWebfontTagsInput() {
+  webfontTagsInput.value = "";
+  selectedWebfontTags = "";
+  updateWebfontTagsStatus();
+  updateApplyButton();
   queuePersistDraft({ immediate: true });
-  sendSelectedFontPreview();
+  queueWebfontTagsPreview({ immediate: true });
+}
+
+function insertIntoWebfontTags(value) {
+  webfontTagsPanel.open = true;
+  const isFocused = document.activeElement === webfontTagsInput;
+  const start = isFocused
+    ? (webfontTagsInput.selectionStart ?? webfontTagsInput.value.length)
+    : webfontTagsInput.value.length;
+  const end = isFocused
+    ? (webfontTagsInput.selectionEnd ?? webfontTagsInput.value.length)
+    : webfontTagsInput.value.length;
+  const prefix = webfontTagsInput.value.slice(0, start);
+  const suffix = webfontTagsInput.value.slice(end);
+  const spacerBefore = prefix.trim() && !prefix.endsWith("\n") ? "\n\n" : "";
+  const spacerAfter = suffix.trim() && !value.endsWith("\n") ? "\n\n" : "";
+
+  webfontTagsInput.value = `${prefix}${spacerBefore}${value}${spacerAfter}${suffix}`;
+  selectedWebfontTags = webfontTagsInput.value;
+  webfontTagsInput.focus();
+  webfontTagsInput.setSelectionRange(
+    prefix.length + spacerBefore.length,
+    prefix.length + spacerBefore.length + value.length,
+  );
+  updateWebfontTagsStatus();
+  updateApplyButton();
+  queuePersistDraft({ immediate: true });
+  queueWebfontTagsPreview({ immediate: true });
 }
 
 function openColorPicker(input) {
@@ -558,10 +584,16 @@ async function applySelectedPreset() {
     return;
   }
 
+  updateWebfontTagsStatus();
+  if (webfontTagsValidation.errors.length > 0) {
+    statusNode.textContent = "Fix Webfont Tags before applying.";
+    return;
+  }
+
   applyButton.disabled = true;
 
   const setValues = {};
-  const removeKeys = [];
+  const removeKeys = ["selectedFont", "selectedEmbeddedTags"];
 
   if (selectedScheme) {
     const storedScheme = TermPttAppearanceState.toStoredScheme({
@@ -574,13 +606,15 @@ async function applySelectedPreset() {
     removeKeys.push("selectedScheme");
   }
 
-  if (selectedFont) {
-    setValues.selectedFont = toStoredFont(selectedFont);
+  const webfontTags = normalizeWebfontTags(selectedWebfontTags);
+  if (webfontTags) {
+    setValues.selectedWebfontTags = webfontTags;
   } else {
-    removeKeys.push("selectedFont");
+    removeKeys.push("selectedWebfontTags");
   }
 
   clearPendingDraftWrite();
+  clearPendingWebfontPreview();
 
   try {
     if (Object.keys(setValues).length > 0) {
@@ -600,18 +634,22 @@ async function applySelectedPreset() {
 
   savedPreset = selectedPreset;
   savedScheme = selectedScheme;
-  savedFont = selectedFont;
-  updateFontStatus();
+  savedWebfontTags = webfontTags;
+  selectedWebfontTags = webfontTags;
+  webfontTagsInput.value = webfontTags;
+  updateWebfontTagsStatus();
   renderCurrentPalette();
   updateApplyButton();
-  statusNode.textContent = `Applied ${selectedPreset.name} with ${selectedFont?.name ?? "Term PTT Default"}`;
+  statusNode.textContent = webfontTags
+    ? `Applied ${selectedPreset.name} with webfont tags`
+    : `Applied ${selectedPreset.name}`;
   sendSelectedSchemeApply();
-  sendSelectedFontApply();
+  sendSelectedWebfontTagsApply();
 }
 
 function previewSelectedAppearance() {
   sendSelectedSchemePreview();
-  sendSelectedFontPreview();
+  sendSelectedWebfontTagsPreview();
 }
 
 function sendSelectedSchemePreview() {
@@ -623,13 +661,19 @@ function sendSelectedSchemePreview() {
   sendPreviewMessage({ type: "preview-clear-scheme" });
 }
 
-function sendSelectedFontPreview() {
-  if (selectedFont) {
-    sendPreviewMessage({ type: "preview-font", font: selectedFont });
+function sendSelectedWebfontTagsPreview() {
+  if (webfontTagsValidation.errors.length > 0) {
+    sendPreviewMessage({ type: "preview-webfont-tags", tags: savedWebfontTags });
     return;
   }
 
-  sendPreviewMessage({ type: "preview-clear-font" });
+  const webfontTags = normalizeWebfontTags(selectedWebfontTags);
+  if (webfontTags) {
+    sendPreviewMessage({ type: "preview-webfont-tags", tags: webfontTags });
+    return;
+  }
+
+  sendPreviewMessage({ type: "preview-clear-webfont-tags" });
 }
 
 function sendSelectedSchemeApply() {
@@ -641,13 +685,14 @@ function sendSelectedSchemeApply() {
   sendPreviewMessage({ type: "apply-clear-scheme" });
 }
 
-function sendSelectedFontApply() {
-  if (selectedFont) {
-    sendPreviewMessage({ type: "apply-font", font: selectedFont });
+function sendSelectedWebfontTagsApply() {
+  const webfontTags = normalizeWebfontTags(selectedWebfontTags);
+  if (webfontTags) {
+    sendPreviewMessage({ type: "apply-webfont-tags", tags: webfontTags });
     return;
   }
 
-  sendPreviewMessage({ type: "apply-clear-font" });
+  sendPreviewMessage({ type: "apply-clear-webfont-tags" });
 }
 
 function queuePersistDraft({ immediate = false } = {}) {
@@ -677,6 +722,29 @@ function clearPendingDraftWrite() {
   persistDraftTimeout = null;
 }
 
+function queueWebfontTagsPreview({ immediate = false } = {}) {
+  clearPendingWebfontPreview();
+
+  if (immediate) {
+    sendSelectedWebfontTagsPreview();
+    return;
+  }
+
+  webfontPreviewTimeout = setTimeout(() => {
+    webfontPreviewTimeout = null;
+    sendSelectedWebfontTagsPreview();
+  }, 200);
+}
+
+function clearPendingWebfontPreview() {
+  if (!webfontPreviewTimeout) {
+    return;
+  }
+
+  clearTimeout(webfontPreviewTimeout);
+  webfontPreviewTimeout = null;
+}
+
 function flushPendingDraftWrite() {
   if (!persistDraftTimeout) {
     return;
@@ -701,7 +769,7 @@ async function persistDraft() {
     preset: selectedPreset,
     scheme: selectedScheme,
     metadata: selectedMetadata,
-    font: selectedFont,
+    webfontTags: selectedWebfontTags,
     query: searchInput.value,
   });
 
@@ -725,7 +793,24 @@ function scrollSelectedPresetIntoView() {
   const selectedButton =
     [...colorListNode.querySelectorAll("[data-preset-id]")]
       .find((button) => button.dataset.presetId === selectedPreset.id) ?? null;
-  selectedButton?.scrollIntoView({ block: "nearest" });
+  if (!selectedButton) {
+    return;
+  }
+
+  const padding = 4;
+  const targetTop = Math.max(0, selectedButton.offsetTop - colorListNode.offsetTop - padding);
+  const targetBottom = targetTop + selectedButton.offsetHeight + padding * 2;
+  const visibleTop = colorListNode.scrollTop;
+  const visibleBottom = visibleTop + colorListNode.clientHeight;
+
+  if (targetTop < visibleTop) {
+    colorListNode.scrollTop = targetTop;
+    return;
+  }
+
+  if (targetBottom > visibleBottom) {
+    colorListNode.scrollTop = Math.max(0, targetBottom - colorListNode.clientHeight);
+  }
 }
 
 function findPreset(id) {
@@ -736,50 +821,46 @@ function findPreset(id) {
   return registry.find((preset) => preset.id === id) ?? null;
 }
 
-function findFont(id) {
-  return fontRegistry.find((font) => font.id === id) ?? null;
-}
+function updateWebfontTagsStatus() {
+  webfontTagsValidation = TermPttWebfontTags.parseWebfontTags(selectedWebfontTags);
+  const tagCount = webfontTagsValidation.entries.length;
+  const hasTags = normalizeWebfontTags(selectedWebfontTags) !== "";
+  const hasErrors = webfontTagsValidation.errors.length > 0;
 
-function reconcileFont(font) {
-  if (!font) {
-    return null;
-  }
+  webfontTagsInput.setAttribute("aria-invalid", String(hasErrors));
 
-  return findFont(font.id) ?? font;
-}
-
-function toStoredFont(font) {
-  return {
-    id: font.id,
-    name: font.name,
-    fallbackStack: font.fallbackStack,
-  };
-}
-
-function updateFontStatus() {
-  if (!selectedFont) {
-    fontStatus.textContent = "Use term.ptt.cc default font.";
+  if (hasErrors) {
+    webfontTagsPanel.dataset.state = "invalid";
+    webfontTagsSummary.textContent = "Invalid";
+    webfontTagsStatus.textContent = webfontTagsValidation.errors[0];
     return;
   }
 
-  fontStatus.textContent =
-    selectedFont.status === "planned"
-      ? "Uses fallback unless the processed font is installed."
-      : selectedFont.fallbackStack.join(", ");
+  if (hasTags) {
+    webfontTagsPanel.dataset.state = "ready";
+    webfontTagsSummary.textContent = `${tagCount} tag${tagCount === 1 ? "" : "s"}`;
+    webfontTagsStatus.textContent =
+      "Previewing webfont tags. Apply saves them for future term.ptt.cc visits.";
+    return;
+  }
+
+  webfontTagsPanel.dataset.state = "empty";
+  webfontTagsSummary.textContent = "Optional";
+  webfontTagsStatus.textContent =
+    "Load @font-face or font stylesheet tags, then choose the family in term.ptt.cc settings.";
 }
 
 function updateApplyButton() {
-  const savedFontForComparison = savedFont ? (findFont(savedFont.id) ?? savedFont) : null;
+  const isSameSavedWebfontTags =
+    normalizeWebfontTags(selectedWebfontTags) === normalizeWebfontTags(savedWebfontTags);
   const isSameSavedScheme =
     selectedScheme === null
       ? savedScheme === null
       : savedScheme !== null && !TermPttAppearanceState.isModifiedScheme(selectedScheme, savedScheme);
-  const isSameSavedFont =
-    selectedFont === null ? savedFont === null : savedFontForComparison?.id === selectedFont.id;
-
   applyButton.disabled =
     !selectedPreset ||
-    (isSameSavedScheme && isSameSavedFont);
+    webfontTagsValidation.errors.length > 0 ||
+    (isSameSavedScheme && isSameSavedWebfontTags);
 }
 
 function copyScheme(scheme) {
@@ -799,14 +880,8 @@ function normalizeHex(value) {
   return /^#[0-9a-fA-F]{6}$/.test(trimmed) ? trimmed.toLowerCase() : null;
 }
 
-function fontStackToCss(fontStack) {
-  return fontStack.map(serializeFontFamily).join(", ");
-}
-
-function serializeFontFamily(fontFamily) {
-  return /^[a-zA-Z0-9_-]+$/.test(fontFamily)
-    ? fontFamily
-    : `"${fontFamily.replaceAll('"', '\\"')}"`;
+function normalizeWebfontTags(value) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function connectPreviewPort() {

@@ -43,7 +43,6 @@ export function collectRequiredEntries(manifest, popupHtml) {
     "manifest.json",
     manifest.action.default_popup,
     "assets/colors.json",
-    "assets/fonts.json",
   ]);
 
   if (manifest.background?.service_worker) {

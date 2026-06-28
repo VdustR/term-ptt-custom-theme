@@ -22,7 +22,7 @@ test("verify script validates the packaged extension zip after packaging", async
   assert.match(verifierScript, /extension\/manifest\.json/);
   assert.match(verifierScript, /content_scripts/);
   assert.match(verifierScript, /assets\/colors\.json/);
-  assert.match(verifierScript, /assets\/fonts\.json/);
+  assert.doesNotMatch(verifierScript, /assets\/fonts\.json/);
   assert.match(verifierScript, /extractPopupLocalReferences/);
   assert.match(packageScript, /Missing required command/);
   assert.match(packageScript, /"\.DS_Store"/);
@@ -40,6 +40,8 @@ test("package verifier includes popup HTML dependencies in required entries", as
   assert.equal(requiredEntries.has("popup.css"), true);
   assert.equal(requiredEntries.has("popup.js"), true);
   assert.equal(requiredEntries.has("ptt-colors.js"), true);
+  assert.equal(requiredEntries.has("ptt-webfont-tags.js"), true);
+  assert.equal(requiredEntries.has("assets/fonts.json"), false);
 });
 
 test("package verifier rejects remote popup dependencies", () => {

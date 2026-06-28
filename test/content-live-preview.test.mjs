@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 async function loadContentHarness(storageState = {}) {
   const colorUtils = await readFile("extension/ptt-colors.js", "utf8");
-  const fontUtils = await readFile("extension/ptt-fonts.js", "utf8");
+  const webfontTagUtils = await readFile("extension/ptt-webfont-tags.js", "utf8");
   const contentScript = await readFile("extension/content.js", "utf8");
   const document = createFakeDocument();
   let connectListener = null;
@@ -37,7 +37,7 @@ async function loadContentHarness(storageState = {}) {
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(colorUtils, context, { filename: "extension/ptt-colors.js" });
-  vm.runInContext(fontUtils, context, { filename: "extension/ptt-fonts.js" });
+  vm.runInContext(webfontTagUtils, context, { filename: "extension/ptt-webfont-tags.js" });
   vm.runInContext(contentScript, context, { filename: "extension/content.js" });
   await flushPromises();
 
@@ -50,6 +50,14 @@ async function loadContentHarness(storageState = {}) {
     },
     styleText(id) {
       return document.getElementById(id)?.textContent ?? null;
+    },
+    webfontTexts() {
+      return document.head.children.map((node) => node.textContent);
+    },
+    webfontLinks() {
+      return document.head.children
+        .filter((node) => node.tagName === "link")
+        .map((node) => node.attributes);
     },
   };
 }
@@ -83,19 +91,15 @@ const previewScheme = {
   },
 };
 
-const savedFont = {
-  id: "system-default",
-  name: "PTT System Default",
-  fallbackStack: ["MingLiu", "monospace"],
-};
+const savedWebfontStyleText =
+  '@font-face{font-family:"Saved PTT Font";src:url("https://example.com/saved.woff2") format("woff2")}';
+const previewWebfontStyleText =
+  '@font-face{font-family:"Preview PTT Font";src:url("https://example.com/preview.woff2") format("woff2")}';
+const savedWebfontTags = `<style>${savedWebfontStyleText}</style>`;
+const previewWebfontTags =
+  `<style>${previewWebfontStyleText}</style><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`;
 
-const previewFont = {
-  id: "fusion-pixel-ptt",
-  name: "Fusion Pixel PTT",
-  fallbackStack: ["Fusion Pixel PTT", "MingLiu", "monospace"],
-};
-
-test("content script loads saved scheme and font from storage", async () => {
+test("content script loads saved scheme and webfont tags from storage", async () => {
   const harness = await loadContentHarness({
     selectedScheme: {
       id: "saved",
@@ -103,14 +107,22 @@ test("content script loads saved scheme and font from storage", async () => {
       basePresetId: "saved",
       scheme: savedScheme,
     },
-    selectedFont: savedFont,
+    selectedWebfontTags: savedWebfontTags,
   });
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
-  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
+  assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 });
 
-test("content script previews scheme and font, then restores saved appearance on disconnect", async () => {
+test("content script ignores invalid saved webfont tags", async () => {
+  const harness = await loadContentHarness({
+    selectedWebfontTags: '<script src="https://example.com/a.js"></script>',
+  });
+
+  assert.deepEqual(harness.webfontTexts(), []);
+});
+
+test("content script previews scheme and webfont tags, then restores saved appearance on disconnect", async () => {
   const harness = await loadContentHarness({
     selectedScheme: {
       id: "saved",
@@ -118,24 +130,31 @@ test("content script previews scheme and font, then restores saved appearance on
       basePresetId: "saved",
       scheme: savedScheme,
     },
-    selectedFont: savedFont,
+    selectedWebfontTags: savedWebfontTags,
   });
   const port = harness.connect();
 
   port.send({ type: "preview-scheme", preset: previewScheme });
-  port.send({ type: "preview-font", font: previewFont });
+  port.send({ type: "preview-webfont-tags", tags: previewWebfontTags });
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#111111/);
-  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /"Fusion Pixel PTT",MingLiu,monospace/);
+  assert.deepEqual(harness.webfontTexts(), [previewWebfontStyleText, ""]);
+  assert.deepEqual(harness.webfontLinks(), [
+    {
+      crossorigin: "",
+      href: "https://fonts.gstatic.com",
+      rel: "preconnect",
+    },
+  ]);
   assert.deepEqual(toPlainObject(port.messages), [
     { type: "preview-applied", id: "preview" },
-    { type: "font-preview-applied", id: "fusion-pixel-ptt" },
+    { type: "webfont-tags-preview-applied" },
   ]);
 
   port.disconnect();
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
-  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
+  assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 });
 
 test("content script previews and applies Term PTT Default by clearing styles", async () => {
@@ -146,34 +165,34 @@ test("content script previews and applies Term PTT Default by clearing styles", 
       basePresetId: "saved",
       scheme: savedScheme,
     },
-    selectedFont: savedFont,
+    selectedWebfontTags: savedWebfontTags,
   });
   const previewPort = harness.connect();
 
   previewPort.send({ type: "preview-clear-scheme" });
-  previewPort.send({ type: "preview-clear-font" });
+  previewPort.send({ type: "preview-clear-webfont-tags" });
 
   assert.equal(harness.styleText("term-ptt-custom-theme-colors-active"), null);
-  assert.equal(harness.styleText("term-ptt-custom-theme-font-active"), null);
+  assert.deepEqual(harness.webfontTexts(), []);
   assert.deepEqual(toPlainObject(previewPort.messages), [
     { type: "scheme-preview-cleared" },
-    { type: "font-preview-cleared" },
+    { type: "webfont-tags-preview-cleared" },
   ]);
 
   previewPort.disconnect();
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
-  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /--term-ptt-font-family:MingLiu,monospace/);
+  assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 
   const applyPort = harness.connect();
   applyPort.send({ type: "preview-clear-scheme" });
   applyPort.send({ type: "apply-clear-scheme" });
-  applyPort.send({ type: "preview-clear-font" });
-  applyPort.send({ type: "apply-clear-font" });
+  applyPort.send({ type: "preview-clear-webfont-tags" });
+  applyPort.send({ type: "apply-clear-webfont-tags" });
   applyPort.disconnect();
 
   assert.equal(harness.styleText("term-ptt-custom-theme-colors-active"), null);
-  assert.equal(harness.styleText("term-ptt-custom-theme-font-active"), null);
+  assert.deepEqual(harness.webfontTexts(), []);
 });
 
 test("content script keeps applied appearance after popup disconnects", async () => {
@@ -182,22 +201,24 @@ test("content script keeps applied appearance after popup disconnects", async ()
 
   port.send({ type: "preview-scheme", preset: previewScheme });
   port.send({ type: "apply-scheme", preset: previewScheme });
-  port.send({ type: "preview-font", font: previewFont });
-  port.send({ type: "apply-font", font: previewFont });
+  port.send({ type: "preview-webfont-tags", tags: previewWebfontTags });
+  port.send({ type: "apply-webfont-tags", tags: previewWebfontTags });
   port.disconnect();
 
   assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#111111/);
-  assert.match(harness.styleText("term-ptt-custom-theme-font-active"), /"Fusion Pixel PTT",MingLiu,monospace/);
+  assert.deepEqual(harness.webfontTexts(), [previewWebfontStyleText, ""]);
 });
 
 function createFakeDocument() {
   const nodes = new Map();
-  const documentElement = createFakeElement(nodes);
+  const documentElement = createFakeElement(nodes, "html");
+  const head = createFakeElement(nodes, "head");
 
   return {
     documentElement,
-    createElement() {
-      return createFakeElement(nodes);
+    head,
+    createElement(tagName) {
+      return createFakeElement(nodes, tagName);
     },
     getElementById(id) {
       return nodes.get(id) ?? null;
@@ -215,11 +236,17 @@ function toPlainObject(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function createFakeElement(nodes) {
+function createFakeElement(nodes, tagName = "") {
   let currentId = "";
   const element = {
+    attributes: {},
+    children: [],
+    parentNode: null,
+    tagName,
     textContent: "",
     appendChild(child) {
+      child.parentNode = element;
+      element.children.push(child);
       if (child.id) {
         nodes.set(child.id, child);
       }
@@ -229,6 +256,13 @@ function createFakeElement(nodes) {
       if (currentId) {
         nodes.delete(currentId);
       }
+      if (element.parentNode) {
+        element.parentNode.children = element.parentNode.children.filter((child) => child !== element);
+        element.parentNode = null;
+      }
+    },
+    setAttribute(name, value) {
+      element.attributes[name] = value;
     },
   };
 
@@ -275,8 +309,9 @@ function createFakePort() {
       messageListener(message);
     },
     disconnect() {
-      assert.equal(typeof disconnectListener, "function");
-      disconnectListener();
+      if (disconnectListener) {
+        disconnectListener();
+      }
     },
   };
 }

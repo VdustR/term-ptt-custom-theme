@@ -93,28 +93,39 @@ test("extension-only scope does not include marketplace handoff surfaces", async
   assert.doesNotMatch(popupJs, /pendingMarketplace|from Store/);
 });
 
-test("extension popup browses colors and fonts inside the extension", async () => {
+test("extension popup browses colors and webfont tags inside the extension", async () => {
   const popupHtml = await readFile("extension/popup.html", "utf8");
   const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");
 
-  assert.match(popupHtml, /fontSelect/);
+  assert.match(popupHtml, /webfontTagsPanel/);
+  assert.match(popupHtml, /webfontTagsInput/);
+  assert.match(popupHtml, /Insert webfont template/);
   assert.match(popupHtml, /repositoryButton/);
   assert.match(popupHtml, /Open project repository on GitHub/);
   assert.match(popupHtml, /currentPaletteName/);
   assert.match(popupHtml, /modifiedBadge/);
   assert.match(popupHtml, /paletteStrip/);
   assert.match(popupHtml, /colorList/);
+  assert.ok(
+    popupHtml.indexOf('id="colorList"') < popupHtml.indexOf('id="webfontTagsPanel"'),
+    "Webfont Tags should stay below the color preset list",
+  );
+  assert.ok(
+    popupHtml.indexOf('id="webfontTagsPanel"') < popupHtml.indexOf('class="actions"'),
+    "Webfont Tags should stay above the Apply action",
+  );
   assert.match(popupJs, /fetch\("assets\/colors\.json"\)/);
-  assert.match(popupJs, /fetch\("assets\/fonts\.json"\)/);
+  assert.doesNotMatch(popupJs, /fetch\("assets\/fonts\.json"\)/);
   assert.match(popupJs, /const REPOSITORY_URL = "https:\/\/github\.com\/VdustR\/term-ptt-custom-theme";/);
   assert.match(popupJs, /repositoryButton\.addEventListener\("click", openRepository\)/);
   assert.match(popupJs, /chrome\.tabs\.create\(\{ url: REPOSITORY_URL, active: true \}\)/);
   assert.match(popupCss, /\.header\s*{[^}]*align-items:\s*center;/s);
   assert.match(popupCss, /\.repository-button\s*{[^}]*padding:\s*0;/s);
-  assert.match(popupJs, /selectedFont/);
+  assert.match(popupJs, /selectedWebfontTags/);
+  assert.match(popupJs, /TermPttWebfontTags\.parseWebfontTags/);
   assert.match(popupJs, /DEFAULT_COLORS_ID = "term-ptt-default"/);
-  assert.match(popupJs, /DEFAULT_FONT_ID = "term-ptt-default"/);
+  assert.doesNotMatch(popupJs, /DEFAULT_FONT_ID/);
   assert.match(popupJs, /Term PTT Default/);
   assert.match(popupJs, /schemeKeys/);
   assert.match(popupJs, /renderCurrentPalette/);
@@ -125,26 +136,39 @@ test("extension popup browses colors and fonts inside the extension", async () =
   assert.match(popupJs, /TermPttAppearanceState\.isModifiedScheme\(selectedScheme, selectedPreset\?\.scheme\)/);
   assert.match(popupJs, /chrome\.storage\.sync\.get\(\[/);
   assert.match(popupJs, /"selectedScheme"/);
+  assert.match(popupJs, /"selectedWebfontTags"/);
   assert.match(popupJs, /getAppearanceDraft\(\)/);
   assert.match(popupJs, /chrome\.storage\.session\s*\?\s*chrome\.storage\.session\.get\(\["appearanceDraft"\]\)\s*:\s*Promise\.resolve\(\{\}\)/);
   assert.match(popupJs, /chrome\.storage\.session\.set\(\{ appearanceDraft/);
   assert.match(popupJs, /if \(chrome\.storage\.session\) \{\s*await chrome\.storage\.session\.remove\(\["appearanceDraft"\]\);\s*\}/s);
   assert.match(popupJs, /TermPttAppearanceState\.createInitialAppearanceState/);
   assert.match(popupJs, /preview-scheme/);
-  assert.match(popupJs, /preview-font/);
+  assert.match(popupJs, /preview-webfont-tags/);
   assert.match(popupJs, /preview-clear-scheme/);
-  assert.match(popupJs, /preview-clear-font/);
+  assert.match(popupJs, /preview-clear-webfont-tags/);
   assert.match(popupJs, /apply-scheme/);
   assert.match(popupJs, /apply-clear-scheme/);
-  assert.match(popupJs, /apply-clear-font/);
+  assert.match(popupJs, /apply-clear-webfont-tags/);
   assert.match(popupJs, /applyButton\.disabled = true;/);
   assert.match(popupJs, /selectedScheme: storedScheme/);
   assert.match(popupJs, /chrome\.storage\.sync\.remove\(removeKeys\)/);
   assert.match(popupJs, /savedPreset = selectedPreset;/);
   assert.match(popupJs, /savedScheme = selectedScheme;/);
-  assert.match(popupJs, /savedFont = selectedFont;/);
-  assert.match(popupJs, /findFont\(savedFont\.id\) \?\? savedFont/);
-  assert.match(popupJs, /scrollIntoView\(\{ block: "nearest"/);
+  assert.match(popupJs, /savedWebfontTags = webfontTags;/);
+  assert.doesNotMatch(popupJs, /let selectedFont|let savedFont|function findFont/);
+  assert.match(popupJs, /const removeKeys = \["selectedFont", "selectedEmbeddedTags"\]/);
+  assert.match(popupJs, /const isFocused = document\.activeElement === webfontTagsInput;/);
+  assert.match(popupJs, /: webfontTagsInput\.value\.length;/);
+  assert.doesNotMatch(popupJs, /scrollIntoView\(/);
+  assert.match(
+    popupJs,
+    /const targetTop = Math\.max\(0, selectedButton\.offsetTop - colorListNode\.offsetTop - padding\);/,
+  );
+  assert.match(popupJs, /colorListNode\.scrollTop = targetTop;/);
+  assert.match(
+    popupJs,
+    /colorListNode\.scrollTop = Math\.max\(0, targetBottom - colorListNode\.clientHeight\);/,
+  );
   assert.doesNotMatch(popupHtml, /activeColorEditor/);
   assert.doesNotMatch(popupJs, /activeColorKey/);
   assert.doesNotMatch(popupJs, /\.slice\(0,\s*100\)/);
@@ -171,7 +195,7 @@ test("extension popup opens the color picker directly from current palette swatc
   assert.doesNotMatch(popupHtml, /activeColorEditor/);
   assert.doesNotMatch(popupJs, /renderColorControl/);
   assert.doesNotMatch(popupJs, /handleColorHexInput/);
-  assert.doesNotMatch(popupJs, /aria-invalid/);
+  assert.match(popupJs, /webfontTagsInput\.setAttribute\("aria-invalid"/);
   assert.match(popupCss, /\.current-palette\s*{/);
   assert.match(popupCss, /\.palette-default-note\s*{[^}]*grid-column:\s*1 \/\s*-1;/s);
   assert.match(popupCss, /\.palette-color-input\s*{/);

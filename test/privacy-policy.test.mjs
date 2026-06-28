@@ -7,7 +7,7 @@ test("privacy policy covers the extension-only data use", async () => {
 
   assert.match(privacy, /does not collect, sell, or share user data/);
   assert.match(privacy, /Selected color scheme id, name, base preset id, and color values/);
-  assert.match(privacy, /Selected font id, name, and fallback stack/);
+  assert.match(privacy, /Optional webfont tags entered by the user/);
   assert.match(privacy, /active tab URL/);
   assert.match(privacy, /does not send browsing history/);
   assert.doesNotMatch(privacy, /marketplace/i);

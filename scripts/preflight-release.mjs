@@ -36,14 +36,11 @@ export async function runReleasePreflight(rootDir = process.cwd()) {
     assertAbsent(manifest, "background", "extension-only package should not ship a background worker");
   });
 
-  await check(checks, "generated registries are synced to extension assets", async () => {
+  await check(checks, "generated color registry is synced to extension assets", async () => {
     const colors = await readJson(rootDir, "data/colors.json");
     const extensionColors = await readJson(rootDir, "extension/assets/colors.json");
-    const fonts = await readJson(rootDir, "data/fonts.json");
-    const extensionFonts = await readJson(rootDir, "extension/assets/fonts.json");
 
     assertDeepEqual(extensionColors, colors, "extension colors asset is stale");
-    assertDeepEqual(extensionFonts, fonts, "extension fonts asset is stale");
   });
 
   await check(checks, "Chrome Web Store image assets use required dimensions", async () => {
@@ -88,7 +85,11 @@ export async function runReleasePreflight(rootDir = process.cwd()) {
     assertIncludes(submission, expected.privacyPath, "submission guide should include privacy policy path");
     assertIncludes(submission, expected.extensionZipPath, "submission guide should include package path");
     assertIncludes(submission, screenshotFiles[0], "submission guide should include screenshot asset paths");
-    assertIncludes(submission, "No remote code is executed", "submission guide should cover remote code");
+    assertIncludes(
+      submission,
+      "No remote JavaScript or WebAssembly is executed",
+      "submission guide should cover remote code",
+    );
     assertIncludes(manualQa, "Unpacked Extension Live Preview", "manual QA should include live preview gate");
     assertNoTodo(privacy, "privacy policy");
     assertNoTodo(submission, "submission guide");

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Term PTT Custom Theme",
   "version": "0.1.0",
-  "description": "在 term.ptt.cc 預覽並套用終端機配色與字型偏好。",
+  "description": "在 term.ptt.cc 預覽並套用終端機配色，可選擇載入自訂 webfont。",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -25,7 +25,7 @@
     {
       "matches": ["https://term.ptt.cc/*"],
       "css": ["assets/color.css"],
-      "js": ["ptt-colors.js", "ptt-fonts.js", "content.js"],
+      "js": ["ptt-colors.js", "ptt-webfont-tags.js", "content.js"],
       "run_at": "document_start"
     }
   ]

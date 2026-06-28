@@ -4,7 +4,6 @@ import path from "node:path";
 const copies = [
   ["color.css", "extension/assets/color.css"],
   ["data/colors.json", "extension/assets/colors.json"],
-  ["data/fonts.json", "extension/assets/fonts.json"],
 ];
 
 for (const [, destination] of copies) {

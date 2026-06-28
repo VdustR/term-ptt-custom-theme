@@ -46,17 +46,7 @@ const solarized = {
   },
 };
 
-const systemFont = {
-  id: "system-default",
-  name: "PTT System Default",
-  fallbackStack: ["MingLiU", "monospace"],
-};
-
-const retroFont = {
-  id: "retro-pixel",
-  name: "Retro Pixel",
-  fallbackStack: ["lithue-1.1", "MingLiU", "monospace"],
-};
+const webfontTags = '<style>@font-face{font-family:"PTT";src:url("https://example.com/ptt.woff2")}</style>';
 
 test("appearance state prefers session draft over saved appearance", async () => {
   const TermPttAppearanceState = await loadAppearanceState();
@@ -65,13 +55,12 @@ test("appearance state prefers session draft over saved appearance", async () =>
     basePresetName: "Gruvbox Dark",
     scheme: { ...gruvbox.scheme, brightRed: "#ff0000" },
     metadata: gruvbox.metadata,
-    font: retroFont,
+    webfontTags,
     query: "gruv",
   };
 
   const state = TermPttAppearanceState.createInitialAppearanceState({
     registry: [gruvbox, solarized],
-    fontRegistry: [systemFont, retroFont],
     storage: {
       selectedScheme: {
         id: "solarized-dark",
@@ -80,14 +69,15 @@ test("appearance state prefers session draft over saved appearance", async () =>
         scheme: solarized.scheme,
         metadata: solarized.metadata,
       },
-      selectedFont: systemFont,
+      selectedWebfontTags:
+        '<style>@font-face{font-family:"Saved PTT";src:url("https://example.com/saved.woff2")}</style>',
       appearanceDraft: draft,
     },
   });
 
   assert.equal(state.selectedPreset.id, "gruvbox-dark");
   assert.equal(state.selectedScheme.brightRed, "#ff0000");
-  assert.equal(state.selectedFont.id, "retro-pixel");
+  assert.equal(state.selectedWebfontTags, webfontTags);
   assert.equal(state.query, "gruv");
   assert.equal(state.isModified, true);
 });
@@ -96,7 +86,6 @@ test("appearance state restores saved selectedScheme when no draft exists", asyn
   const TermPttAppearanceState = await loadAppearanceState();
   const state = TermPttAppearanceState.createInitialAppearanceState({
     registry: [gruvbox, solarized],
-    fontRegistry: [systemFont, retroFont],
     storage: {
       selectedScheme: {
         id: "solarized-dark",
@@ -105,14 +94,14 @@ test("appearance state restores saved selectedScheme when no draft exists", asyn
         scheme: solarized.scheme,
         metadata: solarized.metadata,
       },
-      selectedFont: retroFont,
+      selectedWebfontTags: webfontTags,
       appearanceDraft: null,
     },
   });
 
   assert.equal(state.selectedPreset.id, "solarized-dark");
   assert.equal(state.selectedScheme.black, "#002b36");
-  assert.equal(state.selectedFont.id, "retro-pixel");
+  assert.equal(state.selectedWebfontTags, webfontTags);
   assert.equal(state.isModified, false);
 });
 
@@ -120,10 +109,9 @@ test("appearance state falls back to Term PTT Default without selectedScheme", a
   const TermPttAppearanceState = await loadAppearanceState();
   const state = TermPttAppearanceState.createInitialAppearanceState({
     registry: [gruvbox, solarized],
-    fontRegistry: [systemFont, retroFont],
     storage: {
       selectedScheme: null,
-      selectedFont: null,
+      selectedWebfontTags: null,
       appearanceDraft: null,
     },
   });
@@ -131,7 +119,7 @@ test("appearance state falls back to Term PTT Default without selectedScheme", a
   assert.equal(state.selectedPreset.id, "term-ptt-default");
   assert.equal(state.selectedPreset.name, "Term PTT Default");
   assert.equal(state.selectedScheme, null);
-  assert.equal(state.selectedFont, null);
+  assert.equal(state.selectedWebfontTags, "");
   assert.equal(state.isModified, false);
 });
 
@@ -142,13 +130,12 @@ test("appearance state restores a Term PTT Default draft", async () => {
     basePresetName: "Term PTT Default",
     scheme: null,
     metadata: {},
-    font: null,
+    webfontTags: "",
     query: "",
   };
 
   const state = TermPttAppearanceState.createInitialAppearanceState({
     registry: [gruvbox, solarized],
-    fontRegistry: [systemFont, retroFont],
     storage: {
       selectedScheme: {
         id: "solarized-dark",
@@ -157,14 +144,14 @@ test("appearance state restores a Term PTT Default draft", async () => {
         scheme: solarized.scheme,
         metadata: solarized.metadata,
       },
-      selectedFont: retroFont,
+      selectedWebfontTags: webfontTags,
       appearanceDraft: draft,
     },
   });
 
   assert.equal(state.selectedPreset.id, "term-ptt-default");
   assert.equal(state.selectedScheme, null);
-  assert.equal(state.selectedFont, null);
+  assert.equal(state.selectedWebfontTags, "");
   assert.equal(state.query, "");
   assert.equal(state.isModified, false);
 });
@@ -175,7 +162,7 @@ test("appearance state serializes draft and stored scheme shapes", async () => {
     preset: gruvbox,
     scheme: { ...gruvbox.scheme, red: "#ff0000" },
     metadata: gruvbox.metadata,
-    font: retroFont,
+    webfontTags,
     query: "box",
   });
   const storedScheme = TermPttAppearanceState.toStoredScheme({
@@ -187,7 +174,7 @@ test("appearance state serializes draft and stored scheme shapes", async () => {
   assert.equal(draft.basePresetId, "gruvbox-dark");
   assert.equal(draft.basePresetName, "Gruvbox Dark");
   assert.equal(draft.scheme.red, "#ff0000");
-  assert.equal(draft.font.id, "retro-pixel");
+  assert.equal(draft.webfontTags, webfontTags);
   assert.equal(draft.query, "box");
   assert.equal(Object.hasOwn(draft, "isEditorExpanded"), false);
   assert.equal(Object.hasOwn(draft, "activeColorKey"), false);
@@ -206,12 +193,12 @@ test("appearance state serializes a Term PTT Default draft shape", async () => {
     },
     scheme: null,
     metadata: {},
-    font: null,
+    webfontTags: "",
     query: "",
   });
 
   assert.equal(draft.basePresetId, "term-ptt-default");
   assert.equal(draft.basePresetName, "Term PTT Default");
   assert.equal(draft.scheme, null);
-  assert.equal(draft.font, null);
+  assert.equal(draft.webfontTags, "");
 });
