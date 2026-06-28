@@ -15,7 +15,6 @@ test("webfont tag utility accepts font-face style and link tags", async () => {
   const { parseWebfontTags } = await loadWebfontTagUtils();
   const result = parseWebfontTags(`
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://example.com/fonts.css">
     <link rel="preload" as="font" href="https://example.com/font.woff2" crossorigin="anonymous">
     <style>
       @font-face {
@@ -26,7 +25,7 @@ test("webfont tag utility accepts font-face style and link tags", async () => {
   `);
 
   assert.equal(result.errors.length, 0);
-  assert.equal(result.entries.length, 4);
+  assert.equal(result.entries.length, 3);
   assert.deepEqual(JSON.parse(JSON.stringify(result.entries[0])), {
     tag: "link",
     attrs: {
@@ -35,8 +34,8 @@ test("webfont tag utility accepts font-face style and link tags", async () => {
       rel: "preconnect",
     },
   });
-  assert.equal(result.entries[3].tag, "style");
-  assert.match(result.entries[3].css, /@font-face/);
+  assert.equal(result.entries[2].tag, "style");
+  assert.match(result.entries[2].css, /@font-face/);
 });
 
 test("webfont tag utility rejects script and arbitrary HTML", async () => {
@@ -60,17 +59,21 @@ test("webfont tag utility rejects unsafe or unsupported link shapes", async () =
   const { parseWebfontTags } = await loadWebfontTagUtils();
 
   assert.match(
-    parseWebfontTags('<link rel="stylesheet" href="http://example.com/fonts.css">').errors.join(" "),
-    /href must use https/,
+    parseWebfontTags('<link rel="stylesheet" href="https://example.com/fonts.css">').errors.join(" "),
+    /rel stylesheet is not supported/,
   );
   assert.match(
-    parseWebfontTags('<link rel="stylesheet" href="https://example.com/fonts.css" onload="alert(1)">').errors.join(
+    parseWebfontTags('<link rel="preload" as="font" href="https://example.com/font.woff2" onload="alert(1)">').errors.join(
       " ",
     ),
     /attribute onload is not supported/,
   );
   assert.match(
     parseWebfontTags('<link rel="preload" href="https://example.com/font.woff2">').errors.join(" "),
-    /must use as="font" or as="style"/,
+    /must use as="font"/,
+  );
+  assert.match(
+    parseWebfontTags('<link rel="preload" as="style" href="https://example.com/fonts.css">').errors.join(" "),
+    /must use as="font"/,
   );
 });
