@@ -847,7 +847,7 @@ function updateWebfontTagsStatus() {
   webfontTagsPanel.dataset.state = "empty";
   webfontTagsSummary.textContent = "Optional";
   webfontTagsStatus.textContent =
-    "Load @font-face, preconnect, or font preload tags, then choose the family in term.ptt.cc settings.";
+    "Load trusted font stylesheet, @font-face, preconnect, or font preload tags, then choose the family in term.ptt.cc settings.";
 }
 
 function updateApplyButton() {
