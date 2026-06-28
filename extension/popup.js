@@ -478,8 +478,13 @@ function clearWebfontTagsInput() {
 
 function insertIntoWebfontTags(value) {
   webfontTagsPanel.open = true;
-  const start = webfontTagsInput.selectionStart ?? webfontTagsInput.value.length;
-  const end = webfontTagsInput.selectionEnd ?? webfontTagsInput.value.length;
+  const isFocused = document.activeElement === webfontTagsInput;
+  const start = isFocused
+    ? (webfontTagsInput.selectionStart ?? webfontTagsInput.value.length)
+    : webfontTagsInput.value.length;
+  const end = isFocused
+    ? (webfontTagsInput.selectionEnd ?? webfontTagsInput.value.length)
+    : webfontTagsInput.value.length;
   const prefix = webfontTagsInput.value.slice(0, start);
   const suffix = webfontTagsInput.value.slice(end);
   const spacerBefore = prefix.trim() && !prefix.endsWith("\n") ? "\n\n" : "";

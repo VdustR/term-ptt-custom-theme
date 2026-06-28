@@ -157,6 +157,8 @@ test("extension popup browses colors and webfont tags inside the extension", asy
   assert.match(popupJs, /savedWebfontTags = webfontTags;/);
   assert.doesNotMatch(popupJs, /let selectedFont|let savedFont|function findFont/);
   assert.match(popupJs, /const removeKeys = \["selectedFont", "selectedEmbeddedTags"\]/);
+  assert.match(popupJs, /const isFocused = document\.activeElement === webfontTagsInput;/);
+  assert.match(popupJs, /: webfontTagsInput\.value\.length;/);
   assert.doesNotMatch(popupJs, /scrollIntoView\(/);
   assert.match(
     popupJs,
