@@ -58,7 +58,7 @@ Term PTT Custom Theme 是給 `term.ptt.cc` 使用的外觀調整工具。
 目前支援：
 
 - 從 `mbadolato/iTerm2-Color-Schemes` 轉換而來的多組終端機 colors。
-- 自訂 webfont tags，可用於 font stylesheet links、preconnect、font preload 或 inline `@font-face`。
+- 自訂 webfont tags，可用於 inline `@font-face`、preconnect 或 font preload。
 - 字型 family 的選用使用 `term.ptt.cc` 內建字型設定完成。
 - 套用前 live preview。
 - `Term PTT Default` 可回到 `term.ptt.cc` 原始外觀。
@@ -87,7 +87,7 @@ Allows the content script and stylesheet to run only on `term.ptt.cc`, where the
 
 No remote JavaScript or WebAssembly is executed by the extension.
 
-The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided webfont tags are restricted to inline `@font-face` CSS and font-related `link` tags; script, arbitrary HTML tags, and inline style rules outside `@font-face` are rejected.
+The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided webfont tags are restricted to inline `@font-face` CSS, preconnect links, and font preload links; remote stylesheet links, script, arbitrary HTML tags, and inline style rules outside `@font-face` are rejected.
 
 ## Data Use
 
@@ -130,7 +130,7 @@ No credentials are required.
 2. Open `https://term.ptt.cc/`.
 3. Open the extension popup.
 4. Select a color preset.
-5. Add an inline `@font-face` style or font stylesheet `link` tag.
+5. Add an inline `@font-face` style or font preload `link` tag.
 6. Confirm that preview changes the active `term.ptt.cc` tab before saving.
 7. Click Apply.
 8. Reload `term.ptt.cc` and confirm the selected appearance is restored.
