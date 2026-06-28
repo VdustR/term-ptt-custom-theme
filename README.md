@@ -127,7 +127,7 @@ Create a script and insert the script:
 
 ## Chrome Extension
 
-This repository includes a Manifest V3 extension for terminal colors and font preferences on `term.ptt.cc`.
+This repository includes a Manifest V3 extension for terminal colors and optional webfont tags on `term.ptt.cc`.
 
 ### Colors Registry
 
@@ -194,15 +194,15 @@ The extension:
 
 - Injects `assets/color.css` on `https://term.ptt.cc/*`.
 - Loads `assets/colors.json`.
-- Loads `assets/fonts.json`.
-- Previews selected color schemes and font fallback stacks on the current `term.ptt.cc` tab.
-- Persists the selected color scheme and font preference with `chrome.storage.sync` after Apply.
+- Previews selected color schemes and allowed webfont tags on the current `term.ptt.cc` tab.
+- Persists the selected color scheme and webfont tags with `chrome.storage.sync` after Apply.
 - Generates PNG extension icons during `pnpm build`.
+
+Webfont tags load user-supplied webfont resources, for example font stylesheet links, preconnect hints, font preloads, or inline `@font-face` rules. The extension does not apply `font-family`; choose the loaded family in `term.ptt.cc` settings. Script, iframe, image, arbitrary HTML tags, and inline style rules outside `@font-face` are rejected.
 
 ### Current Limits
 
 - Colors are implemented from the generated iTerm2 registry.
-- Font selection is implemented as a fallback-stack preference. Processed font file generation and bundling are still follow-up work.
 - Packs are intentionally out of scope.
 - Chrome Web Store screenshots currently use the original public custom-theme and retro-theme samples; review them before submission.
 

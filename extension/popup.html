@@ -11,7 +11,7 @@
       <header class="header">
         <div class="header-copy">
           <h1>Term PTT Custom Theme</h1>
-          <p id="status">Loading colors and fonts...</p>
+          <p id="status">Loading colors...</p>
         </div>
         <button
           id="repositoryButton"
@@ -27,12 +27,6 @@
       </header>
 
       <section id="controls" class="controls" hidden>
-        <label class="font-field">
-          <span>Font</span>
-          <select id="fontSelect"></select>
-          <small id="fontStatus">Loading fonts...</small>
-        </label>
-
         <section class="current-palette" aria-labelledby="currentPaletteHeading">
           <div class="palette-header">
             <div class="palette-title">
@@ -54,12 +48,46 @@
 
         <div id="colorList" class="color-list" aria-label="Color presets"></div>
 
+        <details id="webfontTagsPanel" class="webfont-tags">
+          <summary>
+            <span>Webfont Tags</span>
+            <small id="webfontTagsSummary">Optional</small>
+          </summary>
+          <div class="webfont-tags-body">
+            <textarea
+              id="webfontTagsInput"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="6000"
+              placeholder="<style>
+@font-face {
+  font-family: &quot;My PTT Font&quot;;
+  src: url(&quot;https://example.com/my-font.woff2&quot;) format(&quot;woff2&quot;);
+}
+</style>"
+            ></textarea>
+            <div class="webfont-tags-toolbar">
+              <button id="insertWebfontTemplateButton" class="secondary-button" type="button">
+                Insert webfont template
+              </button>
+              <button id="clearWebfontTagsButton" class="secondary-button" type="button">
+                Clear
+              </button>
+            </div>
+            <small id="webfontTagsStatus">
+              Load @font-face or font stylesheet tags, then choose the family in term.ptt.cc settings.
+            </small>
+          </div>
+        </details>
+
         <footer class="actions">
           <button id="applyButton" type="button" disabled>Apply</button>
         </footer>
       </section>
     </main>
     <script src="ptt-colors.js"></script>
+    <script src="ptt-webfont-tags.js"></script>
     <script src="appearance-state.js"></script>
     <script src="popup.js"></script>
   </body>

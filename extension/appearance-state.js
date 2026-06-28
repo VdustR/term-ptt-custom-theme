@@ -26,10 +26,9 @@
     metadata: { isDefault: true },
   };
 
-  function createInitialAppearanceState({ registry, fontRegistry, storage }) {
+  function createInitialAppearanceState({ registry, storage }) {
     const defaultPreset = defaultColorsPreset;
-    const defaultFont = null;
-    const draft = normalizeDraft(storage.appearanceDraft, registry, fontRegistry);
+    const draft = normalizeDraft(storage.appearanceDraft, registry);
 
     if (draft) {
       const selectedPreset = findPreset(registry, draft.basePresetId) ?? defaultPreset;
@@ -37,7 +36,7 @@
         selectedPreset,
         selectedScheme: draft.scheme,
         selectedMetadata: draft.metadata ?? selectedPreset?.metadata ?? {},
-        selectedFont: findFont(fontRegistry, draft.font?.id) ?? draft.font ?? defaultFont,
+        selectedWebfontTags: draft.webfontTags,
         query: draft.query,
         isModified: isModifiedScheme(draft.scheme, selectedPreset?.scheme),
       };
@@ -45,15 +44,13 @@
 
     const saved = normalizeSavedAppearance(storage);
     const selectedPreset = findPreset(registry, saved?.basePresetId ?? saved?.id) ?? defaultPreset;
-    const selectedFont =
-      findFont(fontRegistry, storage.selectedFont?.id) ?? storage.selectedFont ?? defaultFont;
     const selectedScheme = saved?.scheme ?? selectedPreset?.scheme ?? null;
 
     return {
       selectedPreset,
       selectedScheme,
       selectedMetadata: saved?.metadata ?? selectedPreset?.metadata ?? {},
-      selectedFont,
+      selectedWebfontTags: typeof storage.selectedWebfontTags === "string" ? storage.selectedWebfontTags : "",
       query: "",
       isModified: isModifiedScheme(selectedScheme, selectedPreset?.scheme),
     };
@@ -67,7 +64,7 @@
     return null;
   }
 
-  function normalizeDraft(draft, registry, fontRegistry) {
+  function normalizeDraft(draft, registry) {
     if (!draft || !draft.basePresetId || !Object.hasOwn(draft, "scheme")) {
       return null;
     }
@@ -78,24 +75,18 @@
         draft.basePresetName ?? findPreset(registry, draft.basePresetId)?.name ?? draft.basePresetId,
       scheme: draft.scheme,
       metadata: draft.metadata ?? findPreset(registry, draft.basePresetId)?.metadata ?? {},
-      font: findFont(fontRegistry, draft.font?.id) ?? draft.font ?? null,
+      webfontTags: typeof draft.webfontTags === "string" ? draft.webfontTags : "",
       query: typeof draft.query === "string" ? draft.query : "",
     };
   }
 
-  function toDraft({ preset, scheme, metadata, font, query }) {
+  function toDraft({ preset, scheme, metadata, webfontTags, query }) {
     return {
       basePresetId: preset.id,
       basePresetName: preset.name,
       scheme: scheme ? copyScheme(scheme) : null,
       metadata: metadata ?? {},
-      font: font
-        ? {
-            id: font.id,
-            name: font.name,
-            fallbackStack: font.fallbackStack,
-          }
-        : null,
+      webfontTags: typeof webfontTags === "string" ? webfontTags : "",
       query: typeof query === "string" ? query : "",
     };
   }
@@ -136,14 +127,6 @@
     }
 
     return registry.find((preset) => preset.id === id) ?? null;
-  }
-
-  function findFont(fontRegistry, id) {
-    if (!id) {
-      return null;
-    }
-
-    return fontRegistry.find((font) => font.id === id) ?? null;
   }
 
   globalThis.TermPttAppearanceState = {

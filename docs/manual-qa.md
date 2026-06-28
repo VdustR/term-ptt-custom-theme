@@ -18,15 +18,15 @@ This is the source-of-truth visual check because the real PTT terminal DOM is th
 3. Click Load unpacked and select the `extension/` directory.
 4. Open `https://term.ptt.cc/`.
 5. Open the `Term PTT Custom Theme` extension popup.
-6. Confirm a fresh install selects `Term PTT Default` for colors and font, with Apply disabled.
+6. Confirm a fresh install selects `Term PTT Default` for colors, keeps Webfont Tags empty, and has Apply disabled.
 7. Select a colors preset.
-8. Select each available font preference.
+8. Open Webfont Tags and insert the webfont template.
 9. Confirm the active `term.ptt.cc` tab updates while the popup is open.
 10. Click Apply.
 11. Reload `https://term.ptt.cc/`.
-12. Confirm the applied colors and font preference are restored.
-13. Select `Term PTT Default` for colors and font, then click Apply.
-14. Reload `https://term.ptt.cc/` and confirm the extension color and font styles are not present.
+12. Confirm the applied colors and webfont tags are restored.
+13. Select `Term PTT Default` for colors, clear Webfont Tags, then click Apply.
+14. Reload `https://term.ptt.cc/` and confirm the extension color and webfont tags are not present.
 15. Open the popup again, change the colors preset, then close the popup without applying.
 16. Confirm the page restores the saved appearance after the popup disconnects.
 17. Reopen the popup and confirm the unsaved draft selection is restored and previewed again.
@@ -44,7 +44,7 @@ Expected result:
 
 - Colors change on the real `term.ptt.cc` terminal.
 - ANSI foreground and background colors remain readable.
-- Font fallback changes do not break terminal column alignment.
+- Webfont tags are limited to inline `@font-face` CSS and font-related link tags.
 - Popup controls stay usable and do not show a connection error on `term.ptt.cc`.
 - The popup shows a clear unavailable state on non-PTT tabs.
 

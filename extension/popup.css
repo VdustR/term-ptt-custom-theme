@@ -111,8 +111,7 @@ p {
   display: none;
 }
 
-.search,
-.font-field {
+.search {
   display: grid;
   flex: 0 0 auto;
   gap: 5px;
@@ -122,8 +121,7 @@ p {
   font-weight: 700;
 }
 
-.search input,
-.font-field select {
+.search input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -137,17 +135,10 @@ p {
   opacity: 1;
 }
 
-.search input:focus-visible,
-.font-field select:focus-visible {
+.search input:focus-visible {
   border-color: var(--accent);
   outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
   outline-offset: 1px;
-}
-
-.font-field small {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 500;
 }
 
 .current-palette {
@@ -159,6 +150,138 @@ p {
   border-radius: 6px;
   background: var(--panel);
   padding: 9px;
+}
+
+.webfont-tags {
+  flex: 0 0 auto;
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.webfont-tags summary {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.webfont-tags summary::-webkit-details-marker {
+  display: none;
+}
+
+.webfont-tags summary::before {
+  content: ">";
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-size: 10px;
+  transition: transform 140ms ease-out;
+}
+
+.webfont-tags[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.webfont-tags summary span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.webfont-tags summary small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.webfont-tags[data-state="invalid"] summary small {
+  color: #ffbc9d;
+}
+
+.webfont-tags[data-state="ready"] summary small {
+  color: var(--accent-strong);
+}
+
+.webfont-tags-body {
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid var(--line);
+  padding: 9px;
+}
+
+.webfont-tags textarea {
+  display: block;
+  width: 100%;
+  min-height: 92px;
+  max-height: 128px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 9px;
+  background: var(--field);
+  color: var(--ink);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.webfont-tags textarea::placeholder {
+  color: #8da097;
+  opacity: 1;
+}
+
+.webfont-tags textarea:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  outline-offset: 1px;
+}
+
+.webfont-tags textarea[aria-invalid="true"] {
+  border-color: #df7f54;
+}
+
+.webfont-tags-toolbar {
+  display: flex;
+  gap: 6px;
+}
+
+.secondary-button {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 6px 8px;
+  background: var(--field);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  border-color: var(--line-strong);
+}
+
+.secondary-button:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  outline-offset: 1px;
+}
+
+#webfontTagsStatus {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.webfont-tags[data-state="invalid"] #webfontTagsStatus {
+  color: #ffbc9d;
 }
 
 .palette-header {
@@ -444,6 +567,7 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .webfont-tags summary::before,
   .preset-preview {
     transition: none;
   }
