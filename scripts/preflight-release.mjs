@@ -29,7 +29,7 @@ export async function runReleasePreflight(rootDir = process.cwd()) {
     assertEqual(manifest.name, expected.manifestName, "manifest name mismatch");
     assertEqual(manifest.version, expected.manifestVersion, "manifest version mismatch");
     assertIncludes(manifest.description, "term.ptt.cc", "manifest description should name term.ptt.cc");
-    assertDeepEqual(manifest.permissions, ["storage"], "manifest permissions mismatch");
+    assertDeepEqual(manifest.permissions, ["storage", "scripting"], "manifest permissions mismatch");
     assertDeepEqual(manifest.host_permissions, ["https://term.ptt.cc/*"], "manifest host permissions mismatch");
     assertEqual(manifest.action.default_popup, "popup.html", "manifest popup mismatch");
     assertAbsent(manifest, "externally_connectable", "manifest should not accept external page messages");

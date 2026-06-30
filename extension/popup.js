@@ -20,6 +20,10 @@ const TERM_PTT_URL = "https://term.ptt.cc/";
 const TERM_PTT_PATTERN = "https://term.ptt.cc/*";
 const DEFAULT_COLORS_ID = "term-ptt-default";
 const APPLY_ACK_TIMEOUT_MS = 1000;
+const PREVIEW_READY_TIMEOUT_MS = 300;
+const PREVIEW_PORT_NAME = "term-ptt-custom-theme-preview";
+const CONTENT_SCRIPT_FILES = ["ptt-colors.js", "ptt-webfont-tags.js", "content.js"];
+const LIVE_PAGE_UNAVAILABLE_STATUS = "Reload term.ptt.cc after installing or updating the extension.";
 const WEBFONT_TEMPLATE = `<style>
 @font-face {
   font-family: "My PTT Font";
@@ -92,7 +96,34 @@ const defaultPttScheme = {
   brightWhite: "#ffffff",
 };
 
-const pttBrightForegroundKeys = [
+const defaultPttMetadata = {
+  background: defaultPttScheme.black,
+  foreground: defaultPttScheme.brightWhite,
+  cursor: defaultPttScheme.brightWhite,
+  selection: defaultPttScheme.brightBlack,
+};
+
+const terminalColorLabels = {
+  background: "Background",
+  foreground: "Foreground",
+  cursor: "Cursor",
+  selection: "Selection",
+};
+
+const terminalColorKeys = ["background", "foreground", "cursor", "selection"];
+
+const pttNormalColorKeys = [
+  "black",
+  "red",
+  "green",
+  "yellow",
+  "blue",
+  "purple",
+  "cyan",
+  "white",
+];
+
+const pttBrightColorKeys = [
   "brightBlack",
   "brightRed",
   "brightGreen",
@@ -103,36 +134,26 @@ const pttBrightForegroundKeys = [
   "brightWhite",
 ];
 
-const pttDarkBackgroundKeys = [
-  "black",
-  "red",
-  "green",
-  "yellow",
-  "blue",
-  "purple",
-  "cyan",
-  "brightBlack",
-];
-
-const pttPreviewSampleGroups = [
+const pttPreviewSampleRows = [
   {
-    label: "黑底",
-    cells: pttBrightForegroundKeys.map((key) => ({
-      text: "文",
+    label: "前景",
+    cells: pttBrightColorKeys.map((key, index) => ({
+      text: String(30 + index),
       fgKey: key,
-      bgKey: "black",
-      pttClass: `q${schemeKeys.indexOf(key)} b0/body`,
+      bgKey: "white",
+      pttClass: `q${8 + index} b7`,
     })),
   },
   {
-    label: "白字",
-    cells: pttDarkBackgroundKeys.map((key) => {
+    label: "背景",
+    cells: pttNormalColorKeys.map((key, index) => {
       const bgIndex = schemeKeys.indexOf(key);
       return {
-        text: "白",
-        fgKey: "brightWhite",
-        bgKey: key,
-        pttClass: `q15 ${bgIndex === 0 ? "b0/body" : `b${bgIndex}`}`,
+        text: String(40 + index),
+        fgKey: "brightYellow",
+        bgKey: key === "black" ? null : key,
+        bgRole: key === "black" ? "background" : null,
+        pttClass: `q11 ${bgIndex === 0 ? "b0/body" : `b${bgIndex}`}`,
       };
     }),
   },
@@ -146,11 +167,13 @@ let savedPreset = null;
 let selectedScheme = null;
 let savedScheme = null;
 let selectedMetadata = {};
+let savedMetadata = null;
 let selectedWebfontTags = "";
 let savedWebfontTags = "";
 let webfontTagsValidation = TermPttWebfontTags.parseWebfontTags("");
 let persistDraftTimeout = null;
 let webfontPreviewTimeout = null;
+let previewPortPromise = null;
 
 repositoryButton.addEventListener("click", openRepository);
 window.addEventListener("pagehide", flushPendingDraftWrite);
@@ -183,14 +206,15 @@ async function init() {
     ? (findPreset(savedStoredScheme.basePresetId ?? savedStoredScheme.id) ?? savedStoredScheme)
     : defaultColorsPreset;
   savedScheme = savedStoredScheme?.scheme ? copyScheme(savedStoredScheme.scheme) : null;
+  savedMetadata = savedStoredScheme?.metadata ?? null;
   savedWebfontTags =
     typeof savedStorage.selectedWebfontTags === "string" ? savedStorage.selectedWebfontTags : "";
 
-  connectPreviewPort();
+  connectPreviewPort({ updateStatus: false });
 
   selectedPreset = initialState.selectedPreset ?? defaultColorsPreset;
   selectedScheme = initialState.selectedScheme ? copyScheme(initialState.selectedScheme) : null;
-  selectedMetadata = initialState.selectedMetadata ?? selectedPreset?.metadata ?? {};
+  selectedMetadata = copyMetadata(initialState.selectedMetadata ?? selectedPreset?.metadata);
   selectedWebfontTags = initialState.selectedWebfontTags ?? "";
   searchInput.value = initialState.query;
   webfontTagsInput.value = selectedWebfontTags;
@@ -268,9 +292,7 @@ function renderCurrentPalette() {
   currentPaletteNameNode.textContent = selectedPreset?.name ?? "No preset selected";
   renderPaletteStrip();
 
-  const isModified =
-    selectedScheme !== null &&
-    TermPttAppearanceState.isModifiedScheme(selectedScheme, selectedPreset?.scheme);
+  const isModified = isModifiedAppearance(selectedScheme, selectedMetadata, selectedPreset);
   modifiedBadgeNode.hidden = !isModified;
   resetButton.hidden = !isModified;
 }
@@ -284,36 +306,83 @@ function renderPaletteStrip() {
     return;
   }
 
-  paletteStripNode.replaceChildren(...schemeKeys.map(renderPaletteSwatchButton));
+  paletteStripNode.replaceChildren(
+    renderPaletteSwatchGroup({
+      label: "Meta",
+      keys: terminalColorKeys,
+      type: "metadata",
+    }),
+    renderPaletteSwatchGroup({
+      label: "ANSI",
+      keys: schemeKeys.slice(0, 8),
+      type: "scheme",
+    }),
+    renderPaletteSwatchGroup({
+      label: "Bright",
+      keys: schemeKeys.slice(8),
+      type: "scheme",
+    }),
+  );
 }
 
-function renderPaletteSwatchButton(key) {
+function renderPaletteSwatchGroup({ label, keys, type }) {
+  const group = document.createElement("div");
+  group.className = "palette-group";
+
+  const labelNode = document.createElement("span");
+  labelNode.className = "palette-group-label";
+  labelNode.textContent = label;
+
+  const swatches = document.createElement("div");
+  swatches.className = "palette-group-swatches";
+  swatches.append(...keys.map((key) => renderPaletteSwatchButton(key, type)));
+
+  group.append(labelNode, swatches);
+  return group;
+}
+
+function renderPaletteSwatchButton(key, type) {
   const picker = document.createElement("span");
   picker.className = "palette-picker";
 
   const button = document.createElement("button");
-  const value = selectedScheme?.[key] ?? "#000000";
+  const value = currentPaletteColor(type, key);
+  const label = paletteColorLabel(type, key);
   button.className = "palette-swatch";
   button.type = "button";
-  button.dataset.schemeKey = key;
+  button.dataset.paletteType = type;
+  button.dataset.paletteKey = key;
   button.style.backgroundColor = value;
-  button.title = `${schemeLabels[key]} ${value}`;
-  button.setAttribute("aria-label", `Edit ${schemeLabels[key]} color ${value}`);
+  button.title = `${label} ${value}`;
+  button.setAttribute("aria-label", `Edit ${label} color ${value}`);
   button.addEventListener("click", () => openColorPicker(input));
 
   const input = document.createElement("input");
-  input.id = `palette-${key}`;
+  input.id = `palette-${type}-${key}`;
   input.className = "palette-color-input";
   input.type = "color";
   input.tabIndex = -1;
   input.value = value;
-  input.dataset.schemeKey = key;
+  input.dataset.paletteType = type;
+  input.dataset.paletteKey = key;
   input.setAttribute("aria-hidden", "true");
   input.addEventListener("input", handleColorPickerInput);
   input.addEventListener("change", handleColorPickerInput);
 
   picker.append(button, input);
   return picker;
+}
+
+function currentPaletteColor(type, key) {
+  if (type === "metadata") {
+    return terminalColor({ scheme: selectedScheme, metadata: selectedMetadata }, key);
+  }
+
+  return normalizeHex(selectedScheme?.[key]) ?? "#000000";
+}
+
+function paletteColorLabel(type, key) {
+  return type === "metadata" ? terminalColorLabels[key] : schemeLabels[key];
 }
 
 function renderColors({ scrollIntoView = false } = {}) {
@@ -347,8 +416,8 @@ function renderPresetPreview(preset) {
 
   if (!preset.scheme) {
     preview.classList.add("preset-preview-default");
-    preview.style.backgroundColor = defaultPttScheme.black;
-    preview.style.color = defaultPttScheme.brightWhite;
+    preview.style.backgroundColor = terminalColor(preset, "background");
+    preview.style.color = terminalColor(preset, "foreground");
     preview.append(
       renderPresetArticleLine({
         markerColor: defaultPttScheme.brightGreen,
@@ -359,8 +428,8 @@ function renderPresetPreview(preset) {
     return preview;
   }
 
-  const background = schemeColor(preset.scheme, "black", "#000000");
-  const foreground = schemeColor(preset.scheme, "brightWhite", "#ffffff");
+  const background = terminalColor(preset, "background");
+  const foreground = terminalColor(preset, "foreground");
   preview.style.backgroundColor = background;
   preview.style.color = foreground;
 
@@ -400,37 +469,70 @@ function renderPresetArticleLine({ markerColor, title }) {
 function renderPresetSampleLine(preset, scheme) {
   const sample = document.createElement("div");
   sample.className = "preset-preview-samples";
-  sample.append(...pttPreviewSampleGroups.map((group) => renderColorSampleGroup(group, scheme)));
+  sample.append(...pttPreviewSampleRows.map((row) => renderColorSampleRow(row, preset, scheme)));
   return sample;
 }
 
-function renderColorSampleGroup(groupDefinition, scheme) {
-  const group = document.createElement("span");
-  group.className = "ptt-color-sample-group";
+function renderColorSampleRow(rowDefinition, preset, scheme) {
+  const row = document.createElement("div");
+  row.className = "ptt-color-sample-row";
 
   const labelNode = document.createElement("span");
   labelNode.className = "ptt-color-sample-label";
-  labelNode.textContent = groupDefinition.label;
+  labelNode.textContent = rowDefinition.label;
 
-  group.append(
+  row.append(
     labelNode,
-    ...groupDefinition.cells.map((cell) => renderPttColorSample(cell, scheme)),
+    ...rowDefinition.cells.map((cell) => renderPttColorSample(cell, preset, scheme)),
   );
-  return group;
+  return row;
 }
 
-function renderPttColorSample(cell, scheme) {
-  const foreground = schemeColor(scheme, cell.fgKey, defaultPttScheme[cell.fgKey] ?? "#ffffff");
-  const background = schemeColor(scheme, cell.bgKey, defaultPttScheme[cell.bgKey] ?? "#000000");
+function renderPttColorSample(cell, preset, scheme) {
+  const foreground = sampleColor(cell.fgRole, cell.fgKey, preset, scheme);
+  const background = sampleColor(cell.bgRole, cell.bgKey, preset, scheme);
   const sample = document.createElement("span");
   sample.className = "ptt-color-sample";
-  sample.title = `${cell.pttClass}: ${schemeLabels[cell.fgKey]} on ${schemeLabels[cell.bgKey]}`;
+  sample.title = `${cell.pttClass}: ${sampleColorLabel(cell.fgRole, cell.fgKey)} on ${
+    sampleColorLabel(cell.bgRole, cell.bgKey)
+  }`;
   sample.setAttribute("aria-label", sample.title);
   sample.style.color = foreground;
   sample.style.backgroundColor = background;
   sample.textContent = cell.text;
 
   return sample;
+}
+
+function sampleColor(role, schemeKey, preset, scheme) {
+  if (role) {
+    return terminalColor({ scheme, metadata: preset?.metadata }, role);
+  }
+
+  return schemeColor(scheme, schemeKey, defaultPttScheme[schemeKey] ?? "#000000");
+}
+
+function sampleColorLabel(role, schemeKey) {
+  if (role) {
+    return terminalColorLabels[role] ?? role;
+  }
+
+  return schemeLabels[schemeKey] ?? schemeKey;
+}
+
+function terminalColor(preset, key) {
+  const scheme = preset?.scheme ?? defaultPttScheme;
+  const metadata = preset?.metadata ?? defaultPttMetadata;
+  const fallback = {
+    background: schemeColor(scheme, "black", defaultPttMetadata.background),
+    foreground: schemeColor(scheme, "brightWhite", defaultPttMetadata.foreground),
+    cursor:
+      normalizeHex(metadata.foreground) ??
+      schemeColor(scheme, "brightWhite", defaultPttMetadata.cursor),
+    selection: schemeColor(scheme, "brightBlack", defaultPttMetadata.selection),
+  };
+
+  return normalizeHex(metadata[key]) ?? fallback[key] ?? defaultPttMetadata.background;
 }
 
 function schemeColor(scheme, schemeKey, fallback) {
@@ -440,7 +542,7 @@ function schemeColor(scheme, schemeKey, fallback) {
 function selectPreset(preset) {
   selectedPreset = preset;
   selectedScheme = preset.scheme ? copyScheme(preset.scheme) : null;
-  selectedMetadata = preset.metadata ?? {};
+  selectedMetadata = copyMetadata(preset.metadata);
   renderCurrentPalette();
   updateApplyButton();
   syncSelectedPresetButtonState();
@@ -518,15 +620,35 @@ function openColorPicker(input) {
 }
 
 function handleColorPickerInput(event) {
-  const key = event.currentTarget.dataset.schemeKey;
+  const type = event.currentTarget.dataset.paletteType;
+  const key = event.currentTarget.dataset.paletteKey;
   const value = normalizeHex(event.currentTarget.value);
   if (!key || !value) {
     return;
   }
 
-  if (updateSchemeColor(key, value)) {
+  const didUpdate =
+    type === "metadata" ? updateMetadataColor(key, value) : updateSchemeColor(key, value);
+  if (didUpdate) {
     queuePersistDraft({ immediate: event.type === "change" });
   }
+}
+
+function updateMetadataColor(key, value) {
+  if (!selectedScheme || !terminalColorKeys.includes(key)) {
+    return false;
+  }
+
+  if (terminalColor({ scheme: selectedScheme, metadata: selectedMetadata }, key) === value) {
+    return false;
+  }
+
+  selectedMetadata = { ...selectedMetadata, [key]: value };
+  syncPaletteColor("metadata", key, value);
+  updatePaletteModifiedState();
+  updateApplyButton();
+  sendPreviewMessage({ type: "preview-scheme", preset: selectedSchemePayload() });
+  return true;
 }
 
 function updateSchemeColor(key, value) {
@@ -539,29 +661,34 @@ function updateSchemeColor(key, value) {
   }
 
   selectedScheme = { ...selectedScheme, [key]: value };
-  syncPaletteColor(key, value);
+  syncPaletteColor("scheme", key, value);
   updatePaletteModifiedState();
   updateApplyButton();
   sendPreviewMessage({ type: "preview-scheme", preset: selectedSchemePayload() });
   return true;
 }
 
-function syncPaletteColor(key, value) {
-  const swatch = paletteStripNode.querySelector(`button.palette-swatch[data-scheme-key="${key}"]`);
+function syncPaletteColor(type, key, value) {
+  const label = paletteColorLabel(type, key);
+  const swatch = paletteStripNode.querySelector(
+    `button.palette-swatch[data-palette-type="${type}"][data-palette-key="${key}"]`,
+  );
   if (swatch) {
     swatch.style.backgroundColor = value;
-    swatch.title = `${schemeLabels[key]} ${value}`;
-    swatch.setAttribute("aria-label", `Edit ${schemeLabels[key]} color ${value}`);
+    swatch.title = `${label} ${value}`;
+    swatch.setAttribute("aria-label", `Edit ${label} color ${value}`);
   }
 
-  const colorInput = paletteStripNode.querySelector(`input[type="color"][data-scheme-key="${key}"]`);
+  const colorInput = paletteStripNode.querySelector(
+    `input[type="color"][data-palette-type="${type}"][data-palette-key="${key}"]`,
+  );
   if (colorInput && colorInput.value !== value) {
     colorInput.value = value;
   }
 }
 
 function updatePaletteModifiedState() {
-  const isModified = TermPttAppearanceState.isModifiedScheme(selectedScheme, selectedPreset?.scheme);
+  const isModified = isModifiedAppearance(selectedScheme, selectedMetadata, selectedPreset);
   modifiedBadgeNode.hidden = !isModified;
   resetButton.hidden = !isModified;
 }
@@ -572,7 +699,7 @@ function resetPaletteToBase() {
   }
 
   selectedScheme = copyScheme(selectedPreset.scheme);
-  selectedMetadata = selectedPreset.metadata ?? {};
+  selectedMetadata = copyMetadata(selectedPreset.metadata);
   renderCurrentPalette();
   updateApplyButton();
   queuePersistDraft({ immediate: true });
@@ -635,6 +762,7 @@ async function applySelectedPreset() {
 
   savedPreset = selectedPreset;
   savedScheme = selectedScheme;
+  savedMetadata = selectedMetadata;
   savedWebfontTags = webfontTags;
   selectedWebfontTags = webfontTags;
   webfontTagsInput.value = webfontTags;
@@ -642,11 +770,12 @@ async function applySelectedPreset() {
   renderCurrentPalette();
   updateApplyButton();
   statusNode.textContent = webfontTags
-    ? `Applied ${selectedPreset.name} with webfont tags`
-    : `Applied ${selectedPreset.name}`;
+    ? `Applying ${selectedPreset.name} with webfont tags...`
+    : `Applying ${selectedPreset.name}...`;
   if (await sendSelectedAppearanceApply()) {
     window.close();
   } else {
+    statusNode.textContent = "Saved. Reload term.ptt.cc to apply changes.";
     applyButton.disabled = false;
   }
 }
@@ -869,11 +998,32 @@ function updateApplyButton() {
   const isSameSavedScheme =
     selectedScheme === null
       ? savedScheme === null
-      : savedScheme !== null && !TermPttAppearanceState.isModifiedScheme(selectedScheme, savedScheme);
+      : savedScheme !== null &&
+        !TermPttAppearanceState.isModifiedScheme(selectedScheme, savedScheme) &&
+        isSameTerminalMetadata(selectedScheme, selectedMetadata, savedScheme, savedMetadata);
   applyButton.disabled =
     !selectedPreset ||
     webfontTagsValidation.errors.length > 0 ||
     (isSameSavedScheme && isSameSavedWebfontTags);
+}
+
+function isSameTerminalMetadata(leftScheme, leftMetadata, rightScheme, rightMetadata) {
+  return ["background", "foreground", "cursor", "selection"].every(
+    (key) =>
+      terminalColor({ scheme: leftScheme, metadata: leftMetadata }, key) ===
+      terminalColor({ scheme: rightScheme, metadata: rightMetadata }, key),
+  );
+}
+
+function isModifiedAppearance(scheme, metadata, preset) {
+  if (!scheme || !preset?.scheme) {
+    return false;
+  }
+
+  return (
+    TermPttAppearanceState.isModifiedScheme(scheme, preset.scheme) ||
+    !isSameTerminalMetadata(scheme, metadata, preset.scheme, preset.metadata)
+  );
 }
 
 function copyScheme(scheme) {
@@ -882,6 +1032,17 @@ function copyScheme(scheme) {
     nextScheme[key] = normalizeHex(scheme?.[key]) ?? "#000000";
   }
   return nextScheme;
+}
+
+function copyMetadata(metadata) {
+  const nextMetadata = {};
+  for (const key of terminalColorKeys) {
+    const value = normalizeHex(metadata?.[key]);
+    if (value) {
+      nextMetadata[key] = value;
+    }
+  }
+  return nextMetadata;
 }
 
 function normalizeHex(value) {
@@ -897,26 +1058,45 @@ function normalizeWebfontTags(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function connectPreviewPort() {
+function connectPreviewPort({ updateStatus = true } = {}) {
   try {
-    port = chrome.tabs.connect(activeTab.id, { name: "term-ptt-custom-theme-preview" });
+    port = chrome.tabs.connect(activeTab.id, { name: PREVIEW_PORT_NAME });
   } catch {
     port = null;
-    statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    if (updateStatus) {
+      setLivePageUnavailableStatus();
+    }
     return;
   }
 
-  port.onDisconnect.addListener(() => {
-    port = null;
-    if (chrome.runtime.lastError) {
-      statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+  const connectedPort = port;
+  connectedPort.onDisconnect.addListener(() => {
+    const isCurrentPort = port === connectedPort;
+    if (isCurrentPort) {
+      port = null;
+    }
+    if (isCurrentPort && chrome.runtime.lastError && updateStatus) {
+      setLivePageUnavailableStatus();
     }
   });
 }
 
 function sendPreviewMessage(message) {
+  void sendPreviewMessageAsync(message);
+}
+
+async function sendPreviewMessageAsync(message) {
+  if (!(await ensurePreviewPort())) {
+    return false;
+  }
+
+  noteLivePageAvailable();
+  return postPreviewMessage(message);
+}
+
+function postPreviewMessage(message) {
   if (!port) {
-    statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    setLivePageUnavailableStatus();
     return false;
   }
 
@@ -925,14 +1105,22 @@ function sendPreviewMessage(message) {
     return true;
   } catch {
     port = null;
-    statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    setLivePageUnavailableStatus();
     return false;
   }
 }
 
-function sendPreviewMessageAndWait(message, expectedTypes) {
+async function sendPreviewMessageAndWait(message, expectedTypes) {
+  if (!(await ensurePreviewPort())) {
+    return false;
+  }
+
+  return postPreviewMessageAndWait(message, expectedTypes);
+}
+
+function postPreviewMessageAndWait(message, expectedTypes, { timeoutMs = APPLY_ACK_TIMEOUT_MS, updateStatusOnTimeout = true } = {}) {
   if (!port) {
-    statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    setLivePageUnavailableStatus();
     return Promise.resolve(false);
   }
 
@@ -959,14 +1147,18 @@ function sendPreviewMessageAndWait(message, expectedTypes) {
     };
 
     const handleDisconnect = () => {
-      port = null;
+      if (port === targetPort) {
+        port = null;
+      }
       finish(false);
     };
 
     timeoutId = setTimeout(() => {
-      statusNode.textContent = "Applied, but could not confirm the live page update.";
+      if (updateStatusOnTimeout) {
+        statusNode.textContent = "Saved, but could not confirm the live page update.";
+      }
       finish(false);
-    }, APPLY_ACK_TIMEOUT_MS);
+    }, timeoutMs);
 
     targetPort.onMessage.addListener(handleMessage);
     targetPort.onDisconnect.addListener(handleDisconnect);
@@ -974,9 +1166,87 @@ function sendPreviewMessageAndWait(message, expectedTypes) {
     try {
       targetPort.postMessage(message);
     } catch {
-      port = null;
-      statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+      if (port === targetPort) {
+        port = null;
+      }
+      if (updateStatusOnTimeout) {
+        setLivePageUnavailableStatus();
+      }
       finish(false);
     }
   });
+}
+
+async function ensurePreviewPort() {
+  if (!previewPortPromise) {
+    previewPortPromise = ensurePreviewPortInternal();
+  }
+
+  try {
+    return await previewPortPromise;
+  } finally {
+    previewPortPromise = null;
+  }
+}
+
+async function ensurePreviewPortInternal() {
+  if (!port) {
+    connectPreviewPort({ updateStatus: false });
+  }
+
+  if (port && (await postPreviewMessageAndWait(
+    { type: "ping" },
+    ["preview-ready"],
+    { timeoutMs: PREVIEW_READY_TIMEOUT_MS, updateStatusOnTimeout: false },
+  ))) {
+    noteLivePageAvailable();
+    return true;
+  }
+
+  port = null;
+
+  if (!(await injectContentScripts())) {
+    return false;
+  }
+
+  connectPreviewPort({ updateStatus: false });
+  if (port && (await postPreviewMessageAndWait(
+    { type: "ping" },
+    ["preview-ready"],
+    { timeoutMs: PREVIEW_READY_TIMEOUT_MS, updateStatusOnTimeout: false },
+  ))) {
+    noteLivePageAvailable();
+    return true;
+  }
+
+  setLivePageUnavailableStatus();
+  return false;
+}
+
+async function injectContentScripts() {
+  if (!chrome.scripting?.executeScript || !activeTab?.id) {
+    setLivePageUnavailableStatus();
+    return false;
+  }
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      files: CONTENT_SCRIPT_FILES,
+    });
+    return true;
+  } catch {
+    setLivePageUnavailableStatus();
+    return false;
+  }
+}
+
+function setLivePageUnavailableStatus() {
+  statusNode.textContent = LIVE_PAGE_UNAVAILABLE_STATUS;
+}
+
+function noteLivePageAvailable() {
+  if (statusNode.textContent === LIVE_PAGE_UNAVAILABLE_STATUS) {
+    statusNode.textContent = `${registry.length} color presets available`;
+  }
 }

@@ -79,6 +79,10 @@ Customize terminal colors and optional custom style loading on term.ptt.cc.
 
 Stores the user's selected color scheme and optional custom style tags in Chrome extension storage. The extension uses this so the chosen appearance persists and can be restored on later visits.
 
+### `scripting`
+
+Injects the extension's packaged content scripts into an already-open `term.ptt.cc` tab when Chrome has not attached them yet, such as immediately after installing or updating the extension. This keeps live preview and Apply working without requiring a manual page reload.
+
 ### `https://term.ptt.cc/*`
 
 Allows the content script and stylesheet to run only on `term.ptt.cc`, where the extension previews and applies the selected terminal appearance.
