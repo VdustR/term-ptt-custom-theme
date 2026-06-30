@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Term PTT Custom Theme",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "自訂 term.ptt.cc 的終端機配色風格，並可載入自己的 style/webfont。",
   "icons": {
     "16": "icons/icon16.png",

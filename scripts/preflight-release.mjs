@@ -6,7 +6,7 @@ import { isDeepStrictEqual } from "node:util";
 
 const expected = {
   manifestName: "Term PTT Custom Theme",
-  manifestVersion: "0.1.0",
+  manifestVersion: "0.2.0",
   extensionZipPath: "dist/term-ptt-custom-theme.zip",
   privacyPath: "PRIVACY.md",
 };
