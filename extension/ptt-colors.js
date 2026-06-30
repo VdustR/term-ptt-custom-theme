@@ -20,20 +20,36 @@
   const supportedSchemeKeys = new Set(Object.keys(schemeToPttKey));
   const supportedPttKeys = new Set(Object.values(schemeToPttKey));
 
-  function schemeToPttColors(scheme) {
+  function schemeToPttColors(scheme, metadata = {}) {
     assertExactSchemeKeys(scheme);
+    const terminalColors = schemeToTerminalColors(scheme, metadata);
     const colors = {};
 
     for (const [schemeKey, pttKey] of Object.entries(schemeToPttKey)) {
       assertHexColor(scheme[schemeKey], schemeKey);
-      colors[pttKey] = scheme[schemeKey];
+      colors[pttKey] = schemeKey === "black" ? terminalColors.background : scheme[schemeKey];
     }
 
     return colors;
   }
 
-  function schemeToCssVariables(scheme) {
-    return colorsToCssVariables(schemeToPttColors(scheme));
+  function schemeToTerminalColors(scheme, metadata = {}) {
+    assertExactSchemeKeys(scheme);
+
+    const foreground = optionalHexColor(metadata.foreground, "foreground") ?? scheme.brightWhite;
+    return {
+      background: optionalHexColor(metadata.background, "background") ?? scheme.black,
+      foreground,
+      cursor: optionalHexColor(metadata.cursor, "cursor") ?? foreground,
+      selection: optionalHexColor(metadata.selection, "selection") ?? scheme.brightBlack,
+    };
+  }
+
+  function schemeToCssVariables(scheme, metadata = {}) {
+    return colorsToCssVariables({
+      ...schemeToTerminalColors(scheme, metadata),
+      ...schemeToPttColors(scheme, metadata),
+    });
   }
 
   function colorsToCssVariables(colors) {
@@ -46,7 +62,7 @@
   }
 
   function assertPttColor(key, value) {
-    if (!supportedPttKeys.has(key)) {
+    if (!supportedPttKeys.has(key) && !isSemanticColorKey(key)) {
       throw new Error(`Unsupported term.ptt CSS color key: ${key}`);
     }
 
@@ -65,14 +81,28 @@
     }
   }
 
+  function isSemanticColorKey(key) {
+    return key === "background" || key === "foreground" || key === "cursor" || key === "selection";
+  }
+
   function assertHexColor(value, key) {
     if (typeof value !== "string" || !/^#[0-9a-fA-F]{6}$/.test(value)) {
       throw new Error(`Invalid color value for ${key}: ${value}`);
     }
   }
 
+  function optionalHexColor(value, key) {
+    if (value == null) {
+      return null;
+    }
+
+    assertHexColor(value, key);
+    return value;
+  }
+
   globalThis.TermPttColors = {
     schemeToCssVariables,
     schemeToPttColors,
+    schemeToTerminalColors,
   };
 })();

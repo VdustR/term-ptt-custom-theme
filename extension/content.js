@@ -1,19 +1,26 @@
+(function () {
+if (globalThis.__termPttCustomThemeContentLoaded) {
+  return;
+}
+
+globalThis.__termPttCustomThemeContentLoaded = true;
+
 const STYLE_ID = "term-ptt-custom-theme-colors-active";
 
-let savedScheme = null;
+let savedAppearance = null;
 let savedWebfontTags = "";
 let previewingScheme = false;
 let previewingWebfontTags = false;
 let webfontTagNodes = [];
 
-function applyScheme(scheme) {
+function applyAppearance(appearance) {
   let style = document.getElementById(STYLE_ID);
   if (!style) {
     style = document.createElement("style");
     style.id = STYLE_ID;
     document.documentElement.appendChild(style);
   }
-  style.textContent = TermPttColors.schemeToCssVariables(scheme);
+  style.textContent = TermPttColors.schemeToCssVariables(appearance.scheme, appearance.metadata);
 }
 
 function clearScheme() {
@@ -51,8 +58,8 @@ function restoreSavedAppearance() {
   previewingScheme = false;
   previewingWebfontTags = false;
 
-  if (savedScheme) {
-    applyScheme(savedScheme);
+  if (savedAppearance) {
+    applyAppearance(savedAppearance);
   } else {
     clearScheme();
   }
@@ -65,11 +72,11 @@ async function loadSavedAppearance() {
     "selectedScheme",
     "selectedWebfontTags",
   ]);
-  savedScheme = selectedScheme?.scheme ?? null;
+  savedAppearance = selectedScheme?.scheme ? selectedScheme : null;
   savedWebfontTags = selectedWebfontTags ?? "";
 
-  if (savedScheme) {
-    applyScheme(savedScheme);
+  if (savedAppearance) {
+    applyAppearance(savedAppearance);
   }
 
   applyWebfontTags(savedWebfontTags);
@@ -81,9 +88,14 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 
   port.onMessage.addListener((message) => {
+    if (message.type === "ping") {
+      port.postMessage({ type: "preview-ready" });
+      return;
+    }
+
     if (message.type === "preview-scheme") {
       previewingScheme = true;
-      applyScheme(message.preset.scheme);
+      applyAppearance(message.preset);
       port.postMessage({ type: "preview-applied", id: message.preset.id });
       return;
     }
@@ -111,15 +123,15 @@ chrome.runtime.onConnect.addListener((port) => {
 
     if (message.type === "apply-scheme") {
       previewingScheme = false;
-      savedScheme = message.preset.scheme;
-      applyScheme(savedScheme);
+      savedAppearance = message.preset;
+      applyAppearance(savedAppearance);
       port.postMessage({ type: "colors-applied", id: message.preset.id });
       return;
     }
 
     if (message.type === "apply-clear-scheme") {
       previewingScheme = false;
-      savedScheme = null;
+      savedAppearance = null;
       clearScheme();
       port.postMessage({ type: "colors-cleared" });
       return;
@@ -155,3 +167,4 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 loadSavedAppearance();
+})();

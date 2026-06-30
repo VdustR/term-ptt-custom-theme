@@ -24,6 +24,8 @@ test("Chrome Web Store submission guide covers listing, privacy, and review fiel
   assert.match(doc, /Customize terminal colors and optional custom style loading on term\.ptt\.cc/);
   assert.match(doc, /Permission Justifications/);
   assert.match(doc, /`storage`/);
+  assert.match(doc, /`scripting`/);
+  assert.match(doc, /already-open `term\.ptt\.cc` tab/);
   assert.match(doc, /`https:\/\/term\.ptt\.cc\/\*`/);
   assert.doesNotMatch(doc, /externally_connectable/);
   assert.match(doc, /Remote Code/);

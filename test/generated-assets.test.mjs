@@ -69,6 +69,7 @@ test("MV3 manifest references files that exist in the extension package", async 
   assert.match(manifest.description, /style\/webfont/);
   assert.equal(manifest.action.default_title, "Term PTT Custom Theme");
   assert.equal(manifest.permissions.includes("storage"), true);
+  assert.equal(manifest.permissions.includes("scripting"), true);
   assert.deepEqual(manifest.host_permissions, ["https://term.ptt.cc/*"]);
   assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
   assert.equal(manifest.content_scripts[0].js.includes("ptt-webfont-tags.js"), true);

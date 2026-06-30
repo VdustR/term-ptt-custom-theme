@@ -1,4 +1,8 @@
 :root {
+  --term-color-background: var(--term-color-black);
+  --term-color-foreground: var(--term-color-fff);
+  --term-color-cursor: var(--term-color-foreground);
+  --term-color-selection: var(--term-color-grey);
   --term-color-black: black;
   --term-color-maroon: maroon;
   --term-color-green: green;
@@ -19,14 +23,33 @@
 }
 
 body {
-  color: var(--term-color-fff) !important;
-  background-color: var(--term-color-black) !important;
+  color: var(--term-color-foreground) !important;
+  background-color: var(--term-color-background) !important;
 }
 
 #easyReadingLastRow,
 #easyReadingReplyRow,
 .main {
-  background-color: var(--term-color-black) !important;
+  background-color: var(--term-color-background) !important;
+}
+
+#cursor {
+  color: var(--term-color-cursor) !important;
+}
+
+#t {
+  caret-color: var(--term-color-cursor) !important;
+}
+
+::selection,
+.main ::selection,
+#easyReadingLastRow ::selection,
+#easyReadingReplyRow ::selection {
+  background-color: var(--term-color-selection) !important;
+}
+
+.linkurl {
+  color: var(--term-color-f0f) !important;
 }
 
 .blink--active .qq1 {
