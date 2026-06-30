@@ -48,67 +48,67 @@ pnpm verify
 
 `pnpm verify` 會執行 build、test、extension package、package verifier 與 release preflight。
 
-## Colors Registry
+## 配色資料
 
-colors registry 來源是 [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes)。
-Third-party source notices are tracked in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+配色資料來源是 [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes)。
+第三方來源說明記錄在 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
 
-Clone upstream repository next to this repository:
+把上游 repository clone 到這個 repository 旁邊：
 
 ```bash
 git clone https://github.com/mbadolato/iTerm2-Color-Schemes.git ../iTerm2-Color-Schemes
 ```
 
-Generate the normalized ANSI color scheme registry:
+產生正規化後的 ANSI 配色資料：
 
 ```bash
 pnpm import:colors
 ```
 
-By default, the importer reads `../iTerm2-Color-Schemes/windowsterminal`. Override the source directory with:
+預設會讀取 `../iTerm2-Color-Schemes/windowsterminal`。如果要改用其他來源目錄，可以指定：
 
 ```bash
 ITERM2_COLOR_SCHEMES_DIR=vendor/iTerm2-Color-Schemes/windowsterminal pnpm import:colors
 ```
 
-The generated registry is written to `data/colors.json` and copied into extension assets by `pnpm build`.
+產生的資料會寫入 `data/colors.json`，並在執行 `pnpm build` 時複製到 extension assets。
 
-## Extension Development
+## Extension 開發
 
-Load the unpacked extension from the `extension/` directory in `chrome://extensions`.
+在 `chrome://extensions` 從 `extension/` 目錄載入 unpacked extension。
 
-The extension package:
+此 extension 套件會：
 
-- Injects `assets/color.css` on `https://term.ptt.cc/*`.
-- Loads `assets/colors.json`.
-- Previews selected color schemes and allowed webfont tags on the current `term.ptt.cc` tab.
-- Persists the selected color scheme and webfont tags with `chrome.storage.sync` after Apply.
-- Generates PNG extension icons during `pnpm build`.
+- 在 `https://term.ptt.cc/*` 注入 `assets/color.css`。
+- 載入 `assets/colors.json`。
+- 在目前的 `term.ptt.cc` 分頁預覽選取的配色與允許的 WebFont Tags。
+- 按下 Apply 後，用 `chrome.storage.sync` 儲存選取的配色與 WebFont Tags。
+- 執行 `pnpm build` 時產生 PNG extension icons。
 
-WebFont Tags is an advanced feature. Paste only style tags and links you trust. Script, iframe, image, arbitrary HTML tags, non-HTTPS links, and event handler attributes are rejected.
+WebFont Tags 是進階功能。請只貼上你信任的 style tags 和 links。script、iframe、image、任意 HTML tags、非 HTTPS links 與 event handler attributes 會被拒絕。
 
-## Packaging
+## 打包
 
-Run only the release artifact preflight after packaging:
+打包後只跑 release artifact preflight：
 
 ```bash
 pnpm preflight:release
 ```
 
-The packaging step requires the system `zip` command. On macOS and Linux this is usually available by default; on Windows, run the package step from WSL, Git Bash with `zip` installed, or the GitHub Actions artifact.
+打包需要系統提供 `zip` command。macOS 和 Linux 通常預設可用；Windows 可以從 WSL、已安裝 `zip` 的 Git Bash，或 GitHub Actions artifact 取得可上傳檔案。
 
-Package the extension zip for manual testing or Chrome Web Store upload:
+產生可手動測試或上傳 Chrome Web Store 的 extension zip：
 
 ```bash
 pnpm package:extension
 ```
 
-The package is written to `dist/term-ptt-custom-theme.zip`.
+產物會寫入 `dist/term-ptt-custom-theme.zip`。
 
-Chrome Web Store listing, privacy, permission, asset, and reviewer test notes are in [`docs/chrome-web-store-submission.md`](docs/chrome-web-store-submission.md).
-Manual release validation steps are tracked in [`docs/manual-qa.md`](docs/manual-qa.md).
-The Chrome Web Store privacy policy text is tracked in [`PRIVACY.md`](PRIVACY.md).
+Chrome Web Store listing、privacy、permission、assets 與 reviewer test notes 記錄在 [`docs/chrome-web-store-submission.md`](docs/chrome-web-store-submission.md)。
+手動 release 驗證步驟記錄在 [`docs/manual-qa.md`](docs/manual-qa.md)。
+Chrome Web Store privacy policy 文字記錄在 [`PRIVACY.md`](PRIVACY.md)。
 
-## License
+## 授權
 
 [MIT](https://github.com/VdustR/term-ptt-custom-theme/blob/main/LICENSE) © [ViPro](https://vdustr.dev).
