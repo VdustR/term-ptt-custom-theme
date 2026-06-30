@@ -1,8 +1,16 @@
 const statusNode = document.getElementById("status");
 const repositoryButton = document.getElementById("repositoryButton");
 const controlsNode = document.getElementById("controls");
+const homePage = document.getElementById("homePage");
+const presetsPage = document.getElementById("presetsPage");
+const injectHtmlPage = document.getElementById("injectHtmlPage");
+const openPresetsButton = document.getElementById("openPresetsButton");
+const openHtmlButton = document.getElementById("openHtmlButton");
+const backFromPresetsButton = document.getElementById("backFromPresetsButton");
+const backFromHtmlButton = document.getElementById("backFromHtmlButton");
+const selectedPresetSummaryNode = document.getElementById("selectedPresetSummary");
+const presetResultStatusNode = document.getElementById("presetResultStatus");
 const searchInput = document.getElementById("searchInput");
-const webfontTagsPanel = document.getElementById("webfontTagsPanel");
 const webfontTagsInput = document.getElementById("webfontTagsInput");
 const webfontTagsSummary = document.getElementById("webfontTagsSummary");
 const webfontTagsStatus = document.getElementById("webfontTagsStatus");
@@ -24,6 +32,12 @@ const PREVIEW_READY_TIMEOUT_MS = 300;
 const PREVIEW_PORT_NAME = "term-ptt-custom-theme-preview";
 const CONTENT_SCRIPT_FILES = ["ptt-colors.js", "ptt-webfont-tags.js", "content.js"];
 const LIVE_PAGE_UNAVAILABLE_STATUS = "Reload term.ptt.cc after installing or updating the extension.";
+const PAGE_HOME = "home";
+const PAGE_PRESETS = "presets";
+const PAGE_INJECT_HTML = "inject-html";
+const PRESET_SEARCH_THROTTLE_MS = 80;
+const PRESET_ROW_HEIGHT = 78;
+const PRESET_OVERSCAN_ROWS = 4;
 const WEBFONT_TEMPLATE = `<style>
 @font-face {
   font-family: "My PTT Font";
@@ -171,11 +185,23 @@ let savedMetadata = null;
 let selectedWebfontTags = "";
 let savedWebfontTags = "";
 let webfontTagsValidation = TermPttWebfontTags.parseWebfontTags("");
+let presetMatches = [];
+let lastPresetQuery = null;
+let presetSearchTimeout = null;
+let presetScrollFrame = null;
+let presetRenderVersion = 0;
+let lastPresetRenderVersion = -1;
+let lastVisiblePresetStart = -1;
+let lastVisiblePresetEnd = -1;
 let persistDraftTimeout = null;
 let webfontPreviewTimeout = null;
 let previewPortPromise = null;
 
 repositoryButton.addEventListener("click", openRepository);
+openPresetsButton.addEventListener("click", () => showPage(PAGE_PRESETS));
+openHtmlButton.addEventListener("click", () => showPage(PAGE_INJECT_HTML));
+backFromPresetsButton.addEventListener("click", () => showPage(PAGE_HOME));
+backFromHtmlButton.addEventListener("click", () => showPage(PAGE_HOME));
 window.addEventListener("pagehide", flushPendingDraftWrite);
 init();
 
@@ -218,14 +244,13 @@ async function init() {
   selectedWebfontTags = initialState.selectedWebfontTags ?? "";
   searchInput.value = initialState.query;
   webfontTagsInput.value = selectedWebfontTags;
-  webfontTagsPanel.open = selectedWebfontTags.trim() !== "";
 
   statusNode.textContent = `${registry.length} color presets available`;
   controlsNode.hidden = false;
   bindEvents();
+  showPage(PAGE_HOME);
   updateWebfontTagsStatus();
   renderCurrentPalette();
-  renderColors({ scrollIntoView: true });
   updateApplyButton();
   previewSelectedAppearance();
 }
@@ -276,6 +301,7 @@ function getAppearanceDraft() {
 
 function bindEvents() {
   searchInput.addEventListener("input", handleSearchInput);
+  colorListNode.addEventListener("scroll", schedulePresetViewportRender);
   webfontTagsInput.addEventListener("input", handleWebfontTagsInput);
   insertWebfontTemplateButton.addEventListener("click", insertWebfontTemplate);
   clearWebfontTagsButton.addEventListener("click", clearWebfontTagsInput);
@@ -284,8 +310,64 @@ function bindEvents() {
 }
 
 function handleSearchInput() {
-  renderColors();
+  presetResultStatusNode.textContent = "Searching...";
+  schedulePresetSearch();
   queuePersistDraft();
+}
+
+function showPage(page) {
+  document.documentElement.dataset.page = page;
+  document.body.dataset.page = page;
+
+  homePage.hidden = page !== PAGE_HOME;
+  presetsPage.hidden = page !== PAGE_PRESETS;
+  injectHtmlPage.hidden = page !== PAGE_INJECT_HTML;
+
+  if (page === PAGE_PRESETS) {
+    renderPresetResults({
+      scrollSelected: searchInput.value.trim() === "",
+    });
+    searchInput.focus();
+    return;
+  }
+
+  if (page === PAGE_INJECT_HTML) {
+    webfontTagsInput.focus();
+    return;
+  }
+
+  if (page === PAGE_HOME) {
+    forcePopupHeightReflow();
+  }
+}
+
+function forcePopupHeightReflow() {
+  const previousHtmlHeight = document.documentElement.style.height;
+  const previousBodyHeight = document.body.style.height;
+  document.documentElement.style.height = "1px";
+  document.body.style.height = "1px";
+
+  requestAnimationFrame(() => {
+    document.documentElement.style.height = previousHtmlHeight;
+    document.body.style.height = previousBodyHeight;
+  });
+}
+
+function schedulePresetSearch() {
+  clearPendingPresetSearch();
+  presetSearchTimeout = setTimeout(() => {
+    presetSearchTimeout = null;
+    renderPresetResults({ resetScroll: true });
+  }, PRESET_SEARCH_THROTTLE_MS);
+}
+
+function clearPendingPresetSearch() {
+  if (!presetSearchTimeout) {
+    return;
+  }
+
+  clearTimeout(presetSearchTimeout);
+  presetSearchTimeout = null;
 }
 
 function renderCurrentPalette() {
@@ -295,6 +377,7 @@ function renderCurrentPalette() {
   const isModified = isModifiedAppearance(selectedScheme, selectedMetadata, selectedPreset);
   modifiedBadgeNode.hidden = !isModified;
   resetButton.hidden = !isModified;
+  updatePresetSummary(isModified);
 }
 
 function renderPaletteStrip() {
@@ -385,24 +468,191 @@ function paletteColorLabel(type, key) {
   return type === "metadata" ? terminalColorLabels[key] : schemeLabels[key];
 }
 
-function renderColors({ scrollIntoView = false } = {}) {
-  const query = searchInput.value.trim().toLowerCase();
-  const matches = [defaultColorsPreset, ...registry].filter((preset) => {
-    const haystack = `${preset.name} ${preset.sourcePath ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-  });
+function renderPresetResults({ resetScroll = false, scrollSelected = false } = {}) {
+  clearPendingPresetSearch();
 
-  colorListNode.replaceChildren(...matches.map(renderColorButton));
-  if (scrollIntoView) {
+  const query = normalizeSearchQuery(searchInput.value);
+  const queryChanged = query !== lastPresetQuery;
+  lastPresetQuery = query;
+  presetMatches = findPresetMatches(query);
+  presetRenderVersion += 1;
+
+  if (resetScroll || queryChanged) {
+    colorListNode.scrollTop = 0;
+  }
+
+  updatePresetResultStatus(query);
+  renderPresetViewport();
+
+  if (scrollSelected) {
     scrollSelectedPresetIntoView();
   }
 }
 
-function renderColorButton(preset) {
+function findPresetMatches(query) {
+  const presets = [defaultColorsPreset, ...registry];
+  if (!query) {
+    return presets;
+  }
+
+  return presets
+    .map((preset, index) => ({
+      preset,
+      index,
+      score: scorePresetMatch(preset, query),
+    }))
+    .filter((match) => match.score > Number.NEGATIVE_INFINITY)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((match) => match.preset);
+}
+
+function scorePresetMatch(preset, query) {
+  const fields = [preset.name, preset.sourcePath ?? ""].map(normalizeSearchQuery).filter(Boolean);
+  const terms = query.split(" ").filter(Boolean);
+  let totalScore = 0;
+
+  for (const term of terms) {
+    const termScore = Math.max(...fields.map((field) => scoreSearchTerm(field, term)));
+    if (termScore <= Number.NEGATIVE_INFINITY) {
+      return Number.NEGATIVE_INFINITY;
+    }
+    totalScore += termScore;
+  }
+
+  return totalScore;
+}
+
+function scoreSearchTerm(field, term) {
+  const directIndex = field.indexOf(term);
+  if (directIndex >= 0) {
+    return 200 - directIndex * 0.05;
+  }
+
+  const compactField = field.replace(/[\s/_.-]+/g, "");
+  const compactIndex = compactField.indexOf(term);
+  if (compactIndex >= 0) {
+    return 170 - compactIndex * 0.05;
+  }
+
+  return Math.max(
+    ...field
+      .split(/[\s/_.-]+/)
+      .filter(Boolean)
+      .map((word) => fuzzyScoreWord(word, term)),
+  );
+}
+
+function fuzzyScoreWord(word, term) {
+  if (!word || word[0] !== term[0]) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  let score = 0;
+  let lastIndex = -1;
+  let runLength = 0;
+
+  for (const char of term) {
+    const index = word.indexOf(char, lastIndex + 1);
+    if (index < 0) {
+      return Number.NEGATIVE_INFINITY;
+    }
+
+    const isContiguous = index === lastIndex + 1;
+    runLength = isContiguous ? runLength + 1 : 0;
+    score += 10 + (isContiguous ? 8 + runLength : 0) + (index === 0 ? 12 : 0);
+    score -= index * 0.01;
+    lastIndex = index;
+  }
+
+  return score;
+}
+
+function normalizeSearchQuery(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function updatePresetResultStatus(query) {
+  const count = presetMatches.length;
+  if (!query) {
+    presetResultStatusNode.textContent = `${count} color presets`;
+    return;
+  }
+
+  presetResultStatusNode.textContent = `${count} result${count === 1 ? "" : "s"} for "${query}"`;
+}
+
+function schedulePresetViewportRender() {
+  if (presetScrollFrame !== null) {
+    return;
+  }
+
+  presetScrollFrame = requestAnimationFrame(() => {
+    presetScrollFrame = null;
+    renderPresetViewport();
+  });
+}
+
+function renderPresetViewport() {
+  if (presetMatches.length === 0) {
+    if (
+      presetRenderVersion === lastPresetRenderVersion &&
+      lastVisiblePresetStart === 0 &&
+      lastVisiblePresetEnd === 0
+    ) {
+      return;
+    }
+
+    lastPresetRenderVersion = presetRenderVersion;
+    lastVisiblePresetStart = 0;
+    lastVisiblePresetEnd = 0;
+
+    const empty = document.createElement("div");
+    empty.className = "color-list-empty";
+    empty.textContent = "No presets found";
+    colorListNode.replaceChildren(empty);
+    return;
+  }
+
+  const viewportHeight = presetMatches.length * PRESET_ROW_HEIGHT;
+  const visibleStart = Math.max(
+    0,
+    Math.floor(colorListNode.scrollTop / PRESET_ROW_HEIGHT) - PRESET_OVERSCAN_ROWS,
+  );
+  const visibleEnd = Math.min(
+    presetMatches.length,
+    Math.ceil((colorListNode.scrollTop + colorListNode.clientHeight) / PRESET_ROW_HEIGHT) +
+      PRESET_OVERSCAN_ROWS,
+  );
+
+  if (
+    presetRenderVersion === lastPresetRenderVersion &&
+    visibleStart === lastVisiblePresetStart &&
+    visibleEnd === lastVisiblePresetEnd
+  ) {
+    return;
+  }
+
+  lastPresetRenderVersion = presetRenderVersion;
+  lastVisiblePresetStart = visibleStart;
+  lastVisiblePresetEnd = visibleEnd;
+
+  const viewport = document.createElement("div");
+  viewport.className = "color-list-viewport";
+  viewport.style.height = `${viewportHeight}px`;
+
+  for (let index = visibleStart; index < visibleEnd; index += 1) {
+    viewport.append(renderColorButton(presetMatches[index], index));
+  }
+
+  colorListNode.replaceChildren(viewport);
+}
+
+function renderColorButton(preset, index) {
   const button = document.createElement("button");
   button.className = "color-button";
   button.type = "button";
   button.dataset.presetId = preset.id;
+  button.style.transform = `translateY(${index * PRESET_ROW_HEIGHT}px)`;
   button.setAttribute("aria-pressed", String(preset.id === selectedPreset?.id));
   button.addEventListener("click", () => selectPreset(preset));
 
@@ -580,7 +830,7 @@ function clearWebfontTagsInput() {
 }
 
 function insertIntoWebfontTags(value) {
-  webfontTagsPanel.open = true;
+  showPage(PAGE_INJECT_HTML);
   const isFocused = document.activeElement === webfontTagsInput;
   const start = isFocused
     ? (webfontTagsInput.selectionStart ?? webfontTagsInput.value.length)
@@ -691,6 +941,12 @@ function updatePaletteModifiedState() {
   const isModified = isModifiedAppearance(selectedScheme, selectedMetadata, selectedPreset);
   modifiedBadgeNode.hidden = !isModified;
   resetButton.hidden = !isModified;
+  updatePresetSummary(isModified);
+}
+
+function updatePresetSummary(isModified = isModifiedAppearance(selectedScheme, selectedMetadata, selectedPreset)) {
+  const presetName = selectedPreset?.name ?? "No preset selected";
+  selectedPresetSummaryNode.textContent = isModified ? `${presetName} · Modified` : presetName;
 }
 
 function resetPaletteToBase() {
@@ -932,26 +1188,26 @@ function scrollSelectedPresetIntoView() {
     return;
   }
 
-  const selectedButton =
-    [...colorListNode.querySelectorAll("[data-preset-id]")]
-      .find((button) => button.dataset.presetId === selectedPreset.id) ?? null;
-  if (!selectedButton) {
+  const selectedIndex = presetMatches.findIndex((preset) => preset.id === selectedPreset.id);
+  if (selectedIndex < 0) {
     return;
   }
 
   const padding = 4;
-  const targetTop = Math.max(0, selectedButton.offsetTop - colorListNode.offsetTop - padding);
-  const targetBottom = targetTop + selectedButton.offsetHeight + padding * 2;
+  const targetTop = Math.max(0, selectedIndex * PRESET_ROW_HEIGHT - padding);
+  const targetBottom = targetTop + PRESET_ROW_HEIGHT + padding * 2;
   const visibleTop = colorListNode.scrollTop;
   const visibleBottom = visibleTop + colorListNode.clientHeight;
 
   if (targetTop < visibleTop) {
     colorListNode.scrollTop = targetTop;
+    renderPresetViewport();
     return;
   }
 
   if (targetBottom > visibleBottom) {
     colorListNode.scrollTop = Math.max(0, targetBottom - colorListNode.clientHeight);
+    renderPresetViewport();
   }
 }
 
@@ -970,23 +1226,22 @@ function updateWebfontTagsStatus() {
   const hasErrors = webfontTagsValidation.errors.length > 0;
 
   webfontTagsInput.setAttribute("aria-invalid", String(hasErrors));
+  injectHtmlPage.dataset.state = hasErrors ? "invalid" : hasTags ? "ready" : "empty";
+  openHtmlButton.dataset.state = injectHtmlPage.dataset.state;
 
   if (hasErrors) {
-    webfontTagsPanel.dataset.state = "invalid";
     webfontTagsSummary.textContent = "Invalid";
     webfontTagsStatus.textContent = webfontTagsValidation.errors[0];
     return;
   }
 
   if (hasTags) {
-    webfontTagsPanel.dataset.state = "ready";
     webfontTagsSummary.textContent = `${tagCount} tag${tagCount === 1 ? "" : "s"}`;
     webfontTagsStatus.textContent =
       "Previewing webfont tags. Apply saves them for future term.ptt.cc visits.";
     return;
   }
 
-  webfontTagsPanel.dataset.state = "empty";
   webfontTagsSummary.textContent = "Optional";
   webfontTagsStatus.textContent =
     "Advanced: custom CSS can change term.ptt.cc. Paste only style tags and links you trust.";

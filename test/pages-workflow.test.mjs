@@ -94,13 +94,22 @@ test("extension-only scope does not include marketplace handoff surfaces", async
   assert.doesNotMatch(popupJs, /pendingMarketplace|from Store/);
 });
 
-test("extension popup browses colors and webfont tags inside the extension", async () => {
+test("extension popup browses colors and inject HTML inside focused pages", async () => {
   const popupHtml = await readFile("extension/popup.html", "utf8");
   const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");
 
-  assert.match(popupHtml, /webfontTagsPanel/);
+  assert.match(popupHtml, /homePage/);
+  assert.match(popupHtml, /presetsPage/);
+  assert.match(popupHtml, /injectHtmlPage/);
+  assert.match(popupHtml, /openPresetsButton/);
+  assert.match(popupHtml, /openHtmlButton/);
+  assert.match(popupHtml, /backFromPresetsButton/);
+  assert.match(popupHtml, /backFromHtmlButton/);
+  assert.match(popupHtml, /selectedPresetSummary/);
+  assert.match(popupHtml, /presetResultStatus/);
   assert.match(popupHtml, /webfontTagsInput/);
+  assert.match(popupHtml, /Inject HTML/);
   assert.match(popupHtml, /Insert webfont template/);
   assert.match(popupHtml, /repositoryButton/);
   assert.match(popupHtml, /Open project repository on GitHub/);
@@ -109,17 +118,33 @@ test("extension popup browses colors and webfont tags inside the extension", asy
   assert.match(popupHtml, /paletteStrip/);
   assert.match(popupHtml, /colorList/);
   assert.ok(
-    popupHtml.indexOf('id="colorList"') < popupHtml.indexOf('id="webfontTagsPanel"'),
-    "Webfont Tags should stay below the color preset list",
+    popupHtml.indexOf('id="homePage"') < popupHtml.indexOf('id="presetsPage"'),
+    "The overview should be the first popup page",
   );
   assert.ok(
-    popupHtml.indexOf('id="webfontTagsPanel"') < popupHtml.indexOf('class="actions"'),
-    "Webfont Tags should stay above the Apply action",
+    popupHtml.indexOf('id="presetsPage"') < popupHtml.indexOf('id="injectHtmlPage"'),
+    "Preset and Inject HTML pages should be separate surfaces",
   );
+  assert.match(popupCss, /--popup-height:\s*auto;/);
+  assert.match(popupCss, /html\[data-page="presets"\],[\s\n]*html\[data-page="inject-html"\]\s*{[^}]*--popup-height:\s*600px;/s);
+  assert.match(popupCss, /\.popup-page\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s);
+  assert.match(popupCss, /\.home-nav\s*{/);
+  assert.match(popupCss, /\.page-link-button\s*{/);
   assert.match(popupJs, /fetch\("assets\/colors\.json"\)/);
   assert.doesNotMatch(popupJs, /fetch\("assets\/fonts\.json"\)/);
   assert.match(popupJs, /const REPOSITORY_URL = "https:\/\/github\.com\/VdustR\/term-ptt-custom-theme";/);
   assert.match(popupJs, /repositoryButton\.addEventListener\("click", openRepository\)/);
+  assert.match(popupJs, /openPresetsButton\.addEventListener\("click", \(\) => showPage\(PAGE_PRESETS\)\)/);
+  assert.match(popupJs, /openHtmlButton\.addEventListener\("click", \(\) => showPage\(PAGE_INJECT_HTML\)\)/);
+  assert.match(popupJs, /backFromPresetsButton\.addEventListener\("click", \(\) => showPage\(PAGE_HOME\)\)/);
+  assert.match(popupJs, /backFromHtmlButton\.addEventListener\("click", \(\) => showPage\(PAGE_HOME\)\)/);
+  assert.match(popupJs, /function showPage\(page\)/);
+  assert.match(popupJs, /document\.documentElement\.dataset\.page = page;/);
+  assert.match(popupJs, /homePage\.hidden = page !== PAGE_HOME;/);
+  assert.match(popupJs, /if \(page === PAGE_HOME\) \{\s*forcePopupHeightReflow\(\);/s);
+  assert.match(popupJs, /function forcePopupHeightReflow\(\)/);
+  assert.match(popupJs, /document\.documentElement\.style\.height = "1px";/);
+  assert.match(popupJs, /requestAnimationFrame\(\(\) => \{/);
   assert.match(popupJs, /chrome\.tabs\.create\(\{ url: REPOSITORY_URL, active: true \}\)/);
   assert.match(popupCss, /\.header\s*{[^}]*align-items:\s*center;/s);
   assert.match(popupCss, /\.repository-button\s*{[^}]*padding:\s*0;/s);
@@ -177,15 +202,15 @@ test("extension popup browses colors and webfont tags inside the extension", asy
   assert.match(popupJs, /const isFocused = document\.activeElement === webfontTagsInput;/);
   assert.match(popupJs, /: webfontTagsInput\.value\.length;/);
   assert.doesNotMatch(popupJs, /scrollIntoView\(/);
-  assert.match(
-    popupJs,
-    /const targetTop = Math\.max\(0, selectedButton\.offsetTop - colorListNode\.offsetTop - padding\);/,
-  );
+  assert.match(popupJs, /const selectedIndex = presetMatches\.findIndex/);
+  assert.match(popupJs, /const targetTop = Math\.max\(0, selectedIndex \* PRESET_ROW_HEIGHT - padding\);/);
   assert.match(popupJs, /colorListNode\.scrollTop = targetTop;/);
   assert.match(
     popupJs,
     /colorListNode\.scrollTop = Math\.max\(0, targetBottom - colorListNode\.clientHeight\);/,
   );
+  assert.match(popupJs, /injectHtmlPage\.dataset\.state = hasErrors \? "invalid" : hasTags \? "ready" : "empty";/);
+  assert.match(popupJs, /openHtmlButton\.dataset\.state = injectHtmlPage\.dataset\.state;/);
   assert.doesNotMatch(popupHtml, /activeColorEditor/);
   assert.doesNotMatch(popupJs, /activeColorKey/);
   assert.doesNotMatch(popupJs, /\.slice\(0,\s*100\)/);
@@ -296,29 +321,49 @@ test("extension popup routes non-term pages to term.ptt.cc", async () => {
   assert.match(routeBody, /statusNode\.textContent = "Could not open term\.ptt\.cc\."/);
 });
 
-test("extension popup keeps scrolling inside the color list", async () => {
+test("extension popup virtualizes preset scrolling and resets search results to the top", async () => {
   const popupCss = await readFile("extension/popup.css", "utf8");
   const popupJs = await readFile("extension/popup.js", "utf8");
   const selectPresetBody = extractFunctionBody(popupJs, "selectPreset");
 
   assert.doesNotMatch(popupJs, /classList\.add\("has-controls"\)/);
   assert.doesNotMatch(popupCss, /body\.has-controls/);
-  assert.match(popupCss, /html,\s*body\s*{[^}]*height:\s*600px;[^}]*overflow:\s*hidden;/s);
+  assert.match(popupCss, /html,\s*body\s*{[^}]*height:\s*var\(--popup-height\);[^}]*overflow:\s*hidden;/s);
   assert.match(popupCss, /\.popup\s*{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*height:\s*100%;[^}]*min-height:\s*0;/s);
   assert.match(popupCss, /\.controls\s*{[^}]*display:\s*flex;[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*flex-direction:\s*column;/s);
-  assert.match(popupCss, /\.controls\[hidden\]\s*{[^}]*display:\s*none;/s);
-  assert.match(popupCss, /\.color-list\s*{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*align-content:\s*start;[^}]*overflow-x:\s*hidden;[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*stable;/s);
+  assert.match(popupCss, /\[hidden\]\s*{[^}]*display:\s*none !important;/s);
+  assert.match(popupCss, /\.color-list\s*{[^}]*position:\s*relative;[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*overflow-x:\s*hidden;[^}]*overflow-y:\s*auto;/s);
+  assert.doesNotMatch(popupCss, /scrollbar-gutter/);
+  assert.match(popupCss, /\.color-list-viewport\s*{[^}]*position:\s*relative;/s);
   assert.doesNotMatch(popupCss, /\.color-list\s*{[^}]*max-height:/s);
-  assert.match(popupCss, /\.color-button\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
+  assert.match(popupCss, /\.color-button\s*{[^}]*position:\s*absolute;[^}]*height:\s*var\(--preset-row-height\);[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
   assert.match(popupCss, /\.preset-preview\s*{[^}]*overflow:\s*hidden;/s);
   assert.match(popupCss, /\.preset-preview-samples\s*{[^}]*display:\s*grid;/s);
   assert.match(popupCss, /\.ptt-color-sample-row\s*{[^}]*grid-template-columns:\s*34px repeat\(8,\s*minmax\(0,\s*1fr\)\);/s);
-  assert.match(popupJs, /renderColors\(\{ scrollIntoView: true \}\)/);
-  assert.match(popupJs, /function renderColors\(\{ scrollIntoView = false \} = \{\}\)/);
-  assert.match(popupJs, /if \(scrollIntoView\) \{\s*scrollSelectedPresetIntoView\(\);\s*\}/s);
+  assert.match(popupJs, /const PRESET_SEARCH_THROTTLE_MS = 80;/);
+  assert.match(popupJs, /const PRESET_ROW_HEIGHT = 78;/);
+  assert.match(popupJs, /searchInput\.addEventListener\("input", handleSearchInput\)/);
+  assert.match(popupJs, /colorListNode\.addEventListener\("scroll", schedulePresetViewportRender\)/);
+  assert.match(popupJs, /function schedulePresetSearch\(\)/);
+  assert.match(popupJs, /setTimeout\(\(\) => \{\s*presetSearchTimeout = null;\s*renderPresetResults\(\{ resetScroll: true \}\);/s);
+  assert.match(popupJs, /function findPresetMatches\(query\)/);
+  assert.match(popupJs, /function scoreSearchTerm\(field, term\)/);
+  assert.match(popupJs, /function fuzzyScoreWord\(word, term\)/);
+  assert.match(popupJs, /function renderPresetViewport\(\)/);
+  assert.match(popupJs, /let presetRenderVersion = 0;/);
+  assert.match(popupJs, /let lastPresetRenderVersion = -1;/);
+  assert.match(popupJs, /presetRenderVersion \+= 1;/);
+  assert.match(popupJs, /const viewportHeight = presetMatches\.length \* PRESET_ROW_HEIGHT;/);
+  assert.match(popupJs, /presetRenderVersion === lastPresetRenderVersion/);
+  assert.match(popupJs, /visibleStart === lastVisiblePresetStart/);
+  assert.match(popupJs, /return;\s*\}\s*lastPresetRenderVersion = presetRenderVersion;/s);
+  assert.match(popupJs, /viewport\.style\.height = `\$\{viewportHeight\}px`;/);
+  assert.match(popupJs, /button\.style\.transform = `translateY\(\$\{index \* PRESET_ROW_HEIGHT\}px\)`;/);
+  assert.match(popupJs, /if \(resetScroll \|\| queryChanged\) \{\s*colorListNode\.scrollTop = 0;/s);
+  assert.match(popupJs, /scrollSelected:\s*searchInput\.value\.trim\(\) === ""/);
   assert.match(popupJs, /function syncSelectedPresetButtonState\(\)/);
   assert.match(selectPresetBody, /syncSelectedPresetButtonState\(\)/);
-  assert.doesNotMatch(selectPresetBody, /renderColors\(/);
+  assert.doesNotMatch(selectPresetBody, /renderPresetResults\(/);
   assert.doesNotMatch(popupJs, /colorListNode\.replaceChildren\(\.\.\.matches\.map\(renderColorButton\)\);\s*scrollSelectedPresetIntoView\(\);/s);
   assert.match(popupJs, /let persistDraftTimeout = null;/);
   assert.match(popupJs, /clearPendingDraftWrite\(\)/);
