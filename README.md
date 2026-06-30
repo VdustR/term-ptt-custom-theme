@@ -77,7 +77,7 @@ ITERM2_COLOR_SCHEMES_DIR=vendor/iTerm2-Color-Schemes/windowsterminal pnpm import
 
 在 `chrome://extensions` 從 `extension/` 目錄載入 unpacked extension。
 
-extension package 內容：
+此 extension 套件會：
 
 - 在 `https://term.ptt.cc/*` 注入 `assets/color.css`。
 - 載入 `assets/colors.json`。
