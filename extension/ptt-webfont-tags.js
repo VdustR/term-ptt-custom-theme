@@ -10,8 +10,7 @@
     "type",
   ]);
   const allowedLinkRels = new Set(["dns-prefetch", "preconnect", "preload", "stylesheet"]);
-  const allowedPreloadAsValues = new Set(["font"]);
-  const trustedStylesheetDomains = new Set(["fonts.googleapis.com", "fonts.bunny.net", "use.typekit.net"]);
+  const allowedPreloadAsValues = new Set(["font", "style"]);
   const allowedCrossoriginValues = new Set(["", "anonymous", "use-credentials"]);
   const allowedReferrerPolicies = new Set([
     "",
@@ -81,7 +80,7 @@
 
   function addUnsupportedTextError(value, errors) {
     if (value.trim() !== "") {
-      errors.push("Only @font-face <style> and font-related <link> tags are supported.");
+      errors.push("Only <style> and style or font-related <link> tags are supported.");
     }
   }
 
@@ -96,18 +95,7 @@
       return;
     }
 
-    if (!containsOnlyFontFaceBlocks(css)) {
-      errors.push("<style> tags can only contain @font-face rules.");
-      return;
-    }
-
     entries.push({ tag: "style", css });
-  }
-
-  function containsOnlyFontFaceBlocks(css) {
-    const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
-    const withoutFontFaceRules = withoutComments.replace(/@font-face\s*\{[^{}]*\}/gi, "");
-    return withoutFontFaceRules.trim() === "";
   }
 
   function addLinkEntry(rawAttributes, entries, errors) {
@@ -187,16 +175,7 @@
 
     const asValue = (attrs.as ?? "").toLowerCase();
     if (relTokens.includes("preload") && !allowedPreloadAsValues.has(asValue)) {
-      errors.push('<link rel="preload"> must use as="font".');
-    }
-
-    if (relTokens.includes("stylesheet")) {
-      const hostname = getHostname(href);
-      if (!hostname) {
-        errors.push("<link> href must be a valid URL.");
-      } else if (!trustedStylesheetDomains.has(hostname)) {
-        errors.push(`<link rel="stylesheet"> domain ${hostname} is not trusted.`);
-      }
+      errors.push('<link rel="preload"> must use as="font" or as="style".');
     }
 
     const crossorigin = (attrs.crossorigin ?? "").toLowerCase();
@@ -225,14 +204,6 @@
     }
 
     return normalized;
-  }
-
-  function getHostname(href) {
-    try {
-      return new URL(href).hostname.toLowerCase();
-    } catch {
-      return "";
-    }
   }
 
   function uniqueErrors(errors) {

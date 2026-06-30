@@ -13,7 +13,7 @@ test("manual QA checklist covers local, extension, store asset, and release gate
   assert.match(doc, /Load unpacked/);
   assert.match(doc, /https:\/\/term\.ptt\.cc\//);
   assert.match(doc, /real `term\.ptt\.cc` terminal/);
-  assert.match(doc, /Webfont tags are limited to trusted font stylesheet links, inline `@font-face` CSS, and font-related link tags/);
+  assert.match(doc, /Webfont Tags accept trusted-by-user style tags and HTTPS style\/font-related link tags/);
   assert.match(doc, /store-assets\/screenshots\//);
   assert.match(doc, /1280x800 PNG/);
   assert.match(doc, /public `PRIVACY\.md` URL/);

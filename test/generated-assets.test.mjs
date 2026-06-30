@@ -66,7 +66,7 @@ test("MV3 manifest references files that exist in the extension package", async 
   assert.equal(manifest.name, "Term PTT Custom Theme");
   assert.match(manifest.description, /term\.ptt\.cc/);
   assert.match(manifest.description, /配色/);
-  assert.match(manifest.description, /webfont/);
+  assert.match(manifest.description, /style\/webfont/);
   assert.equal(manifest.action.default_title, "Term PTT Custom Theme");
   assert.equal(manifest.permissions.includes("storage"), true);
   assert.deepEqual(manifest.host_permissions, ["https://term.ptt.cc/*"]);

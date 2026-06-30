@@ -47,18 +47,18 @@ Term PTT Custom Theme
 
 ### Short Description
 
-在 term.ptt.cc 預覽並套用終端機配色，可選擇載入自訂 webfont。
+在 term.ptt.cc 預覽並套用終端機配色，可選擇載入自訂 style/webfont。
 
 ### Detailed Description
 
 Term PTT Custom Theme 是給 `term.ptt.cc` 使用的外觀調整工具。
 
-你可以在 extension popup 裡瀏覽終端機配色 presets，並加入 webfont tags 來載入自己的 webfont 資源。所有變更都會直接在目前的 `term.ptt.cc` 分頁即時預覽。確認效果後按下 Apply，之後重新開啟 PTT 時會自動套用同一組設定。
+你可以在 extension popup 裡瀏覽終端機配色 presets，並加入 advanced style tags 來載入自己的 CSS 或 webfont 資源。所有變更都會直接在目前的 `term.ptt.cc` 分頁即時預覽。確認效果後按下 Apply，之後重新開啟 PTT 時會自動套用同一組設定。
 
 目前支援：
 
 - 從 `mbadolato/iTerm2-Color-Schemes` 轉換而來的多組終端機 colors。
-- 自訂 webfont tags，可用於 trusted font stylesheet links、inline `@font-face`、preconnect 或 font preload。
+- 自訂 advanced style tags，可用於 HTTPS stylesheets、inline CSS、preconnect、style preload 或 font preload。
 - 字型 family 的選用使用 `term.ptt.cc` 內建字型設定完成。
 - 套用前 live preview。
 - `Term PTT Default` 可回到 `term.ptt.cc` 原始外觀。
@@ -71,13 +71,13 @@ Third-party source notices are tracked in `THIRD_PARTY_NOTICES.md`.
 
 ## Single Purpose
 
-Customize terminal colors and optional webfont loading on term.ptt.cc.
+Customize terminal colors and optional custom style loading on term.ptt.cc.
 
 ## Permission Justifications
 
 ### `storage`
 
-Stores the user's selected color scheme and optional webfont tags in Chrome extension storage. The extension uses this so the chosen appearance persists and can be restored on later visits.
+Stores the user's selected color scheme and optional custom style tags in Chrome extension storage. The extension uses this so the chosen appearance persists and can be restored on later visits.
 
 ### `https://term.ptt.cc/*`
 
@@ -87,7 +87,7 @@ Allows the content script and stylesheet to run only on `term.ptt.cc`, where the
 
 No remote JavaScript or WebAssembly is executed by the extension.
 
-The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided webfont tags are restricted to trusted HTTPS font stylesheet links from `fonts.googleapis.com`, `fonts.bunny.net`, or `use.typekit.net`, inline `@font-face` CSS, preconnect links, and font preload links; script, arbitrary HTML tags, event handler attributes, non-HTTPS links, and inline style rules outside `@font-face` are rejected.
+The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided advanced style tags are restricted to `<style>` tags and HTTPS style/font-related `<link>` tags. This advanced field can change the `term.ptt.cc` page, so users should paste only style tags and links they trust. Script, arbitrary HTML tags, event handler attributes, and non-HTTPS links are rejected.
 
 ## Data Use
 
@@ -104,7 +104,7 @@ Use the public repository URL for `PRIVACY.md` as the Chrome Web Store privacy p
 Stored data is limited to:
 
 - Selected color scheme id, name, base preset id, and color values.
-- Optional webfont tags entered by the user.
+- Optional custom style tags entered by the user.
 
 The popup reads the active tab URL to decide whether preview is available on `term.ptt.cc`. The extension does not send browsing activity, terminal content, account data, or page contents to a server controlled by this project.
 
@@ -130,7 +130,7 @@ No credentials are required.
 2. Open `https://term.ptt.cc/`.
 3. Open the extension popup.
 4. Select a color preset.
-5. Add an inline `@font-face` style, trusted font stylesheet `link`, or font preload `link` tag.
+5. Add an inline style, stylesheet `link`, or style/font preload `link` tag.
 6. Confirm that preview changes the active `term.ptt.cc` tab before saving.
 7. Click Apply.
 8. Reload `term.ptt.cc` and confirm the selected appearance is restored.

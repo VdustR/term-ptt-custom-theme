@@ -6,11 +6,11 @@ term-ptt-custom-theme
 
 ## Users
 
-People who use `term.ptt.cc` and want terminal-style color control plus optional webfont loading without leaving the browser. They are usually already familiar with PTT, ANSI colors, terminal palettes, webfont snippets, and compact preference UIs.
+People who use `term.ptt.cc` and want terminal-style color control plus optional custom style or webfont loading without leaving the browser. They are usually already familiar with PTT, ANSI colors, terminal palettes, CSS or webfont snippets, and compact preference UIs.
 
 ## Product Purpose
 
-Term PTT Custom Theme lets users preview, customize, and apply terminal color presets for `term.ptt.cc`, with an advanced webfont tags field for loading user-supplied webfont resources. Success means users can quickly scan many presets, understand what each palette will do to a terminal surface, preview safely, and apply only when they are satisfied.
+Term PTT Custom Theme lets users preview, customize, and apply terminal color presets for `term.ptt.cc`, with an advanced style tags field for loading user-supplied CSS or webfont resources. Success means users can quickly scan many presets, understand what each palette will do to a terminal surface, preview safely, and apply only when they are satisfied.
 
 ## Brand Personality
 

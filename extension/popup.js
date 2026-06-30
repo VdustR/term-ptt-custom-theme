@@ -19,6 +19,7 @@ const REPOSITORY_URL = "https://github.com/VdustR/term-ptt-custom-theme";
 const TERM_PTT_URL = "https://term.ptt.cc/";
 const TERM_PTT_PATTERN = "https://term.ptt.cc/*";
 const DEFAULT_COLORS_ID = "term-ptt-default";
+const APPLY_ACK_TIMEOUT_MS = 1000;
 const WEBFONT_TEMPLATE = `<style>
 @font-face {
   font-family: "My PTT Font";
@@ -643,8 +644,9 @@ async function applySelectedPreset() {
   statusNode.textContent = webfontTags
     ? `Applied ${selectedPreset.name} with webfont tags`
     : `Applied ${selectedPreset.name}`;
-  sendSelectedSchemeApply();
-  sendSelectedWebfontTagsApply();
+  if (await sendSelectedAppearanceApply()) {
+    window.close();
+  }
 }
 
 function previewSelectedAppearance() {
@@ -676,23 +678,30 @@ function sendSelectedWebfontTagsPreview() {
   sendPreviewMessage({ type: "preview-clear-webfont-tags" });
 }
 
+async function sendSelectedAppearanceApply() {
+  const schemeApplied = await sendSelectedSchemeApply();
+  const webfontTagsApplied = await sendSelectedWebfontTagsApply();
+  return schemeApplied && webfontTagsApplied;
+}
+
 function sendSelectedSchemeApply() {
   if (selectedScheme) {
-    sendPreviewMessage({ type: "apply-scheme", preset: selectedSchemePayload() });
-    return;
+    return sendPreviewMessageAndWait(
+      { type: "apply-scheme", preset: selectedSchemePayload() },
+      ["colors-applied"],
+    );
   }
 
-  sendPreviewMessage({ type: "apply-clear-scheme" });
+  return sendPreviewMessageAndWait({ type: "apply-clear-scheme" }, ["colors-cleared"]);
 }
 
 function sendSelectedWebfontTagsApply() {
   const webfontTags = normalizeWebfontTags(selectedWebfontTags);
   if (webfontTags) {
-    sendPreviewMessage({ type: "apply-webfont-tags", tags: webfontTags });
-    return;
+    return sendPreviewMessageAndWait({ type: "apply-webfont-tags", tags: webfontTags }, ["webfont-tags-applied"]);
   }
 
-  sendPreviewMessage({ type: "apply-clear-webfont-tags" });
+  return sendPreviewMessageAndWait({ type: "apply-clear-webfont-tags" }, ["webfont-tags-cleared"]);
 }
 
 function queuePersistDraft({ immediate = false } = {}) {
@@ -847,7 +856,7 @@ function updateWebfontTagsStatus() {
   webfontTagsPanel.dataset.state = "empty";
   webfontTagsSummary.textContent = "Optional";
   webfontTagsStatus.textContent =
-    "Load trusted font stylesheet, @font-face, preconnect, or font preload tags, then choose the family in term.ptt.cc settings.";
+    "Advanced: custom CSS can change term.ptt.cc. Paste only style tags and links you trust.";
 }
 
 function updateApplyButton() {
@@ -904,13 +913,66 @@ function connectPreviewPort() {
 function sendPreviewMessage(message) {
   if (!port) {
     statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
-    return;
+    return false;
   }
 
   try {
     port.postMessage(message);
+    return true;
   } catch {
     port = null;
     statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    return false;
   }
+}
+
+function sendPreviewMessageAndWait(message, expectedTypes) {
+  if (!port) {
+    statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+    return Promise.resolve(false);
+  }
+
+  const targetPort = port;
+
+  return new Promise((resolve) => {
+    let timeoutId = null;
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      targetPort.onMessage.removeListener(handleMessage);
+      targetPort.onDisconnect.removeListener(handleDisconnect);
+    };
+
+    const finish = (applied) => {
+      cleanup();
+      resolve(applied);
+    };
+
+    const handleMessage = (response) => {
+      if (expectedTypes.includes(response?.type)) {
+        finish(true);
+      }
+    };
+
+    const handleDisconnect = () => {
+      port = null;
+      finish(false);
+    };
+
+    timeoutId = setTimeout(() => {
+      statusNode.textContent = "Applied, but could not confirm the live page update.";
+      finish(false);
+    }, APPLY_ACK_TIMEOUT_MS);
+
+    targetPort.onMessage.addListener(handleMessage);
+    targetPort.onDisconnect.addListener(handleDisconnect);
+
+    try {
+      targetPort.postMessage(message);
+    } catch {
+      port = null;
+      statusNode.textContent = "Reload term.ptt.cc after installing the extension.";
+      finish(false);
+    }
+  });
 }
