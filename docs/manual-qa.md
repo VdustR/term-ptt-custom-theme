@@ -22,7 +22,7 @@ This is the source-of-truth visual check because the real PTT terminal DOM is th
 7. Select a colors preset.
 8. Open Webfont Tags and insert the webfont template.
 9. Confirm the active `term.ptt.cc` tab updates while the popup is open.
-10. Click Apply.
+10. Click Apply and confirm the popup closes after the page acknowledges the applied appearance.
 11. Reload `https://term.ptt.cc/`.
 12. Confirm the applied colors and webfont tags are restored.
 13. Select `Term PTT Default` for colors, clear Webfont Tags, then click Apply.
@@ -44,7 +44,7 @@ Expected result:
 
 - Colors change on the real `term.ptt.cc` terminal.
 - ANSI foreground and background colors remain readable.
-- Webfont tags are limited to trusted font stylesheet links, inline `@font-face` CSS, and font-related link tags.
+- Webfont Tags accept trusted-by-user style tags and HTTPS style/font-related link tags.
 - Popup controls stay usable and do not show a connection error on `term.ptt.cc`.
 - The popup shows a clear unavailable state on non-PTT tabs.
 
