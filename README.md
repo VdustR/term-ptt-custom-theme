@@ -1,140 +1,59 @@
 # Term PTT Custom Theme
 
-A Chrome extension and [Tampermonkey](https://www.tampermonkey.net/) / [Greasemonkey](https://www.greasespot.net/) stylesheet guide to customize [term.ptt.cc](https://term.ptt.cc/).
+自訂 [term.ptt.cc](https://term.ptt.cc/) 的終端機配色風格，並可載入自己的 style/webfont。
 
-Sample with Goph Graph Theme + [jf open 粉圓](https://github.com/justfont/open-huninn-font):
+[Chrome Web Store](https://chromewebstore.google.com/detail/term-ptt-custom-theme/lmanknmemlpnjolgjoffdkmkkeibpfej)
+
+範例：Goph Graph Theme 搭配 [jf open 粉圓](https://github.com/justfont/open-huninn-font)。
 
 ![term-ptt-custom-theme](https://vdustr.dev/asset-2022/04-08-term-ptt-custom-theme/graph.png)
 
-## Userscript Usage
+## 功能
 
-Create a script and insert the script:
+- 在 `term.ptt.cc` 套用終端機配色風格。
+- 瀏覽從 [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes) 轉換而來的 colors presets。
+- 調整背景、前景、cursor、selection 與 ANSI 色票。
+- 開啟 extension popup 時即時在目前的 `term.ptt.cc` 分頁查看效果，確認後再按 Apply 儲存。
+- 使用 WebFont Tags 載入自己的 HTTPS stylesheet、inline CSS、preconnect、style preload 或 font preload。
+- 在非 `term.ptt.cc` 頁面點擊 extension 時，切換到既有的 `term.ptt.cc` 分頁；沒有分頁時會開啟新的 `term.ptt.cc`。
+- 使用 `Term PTT Default` 回到 `term.ptt.cc` 原始外觀。
 
-```js
-// ==UserScript==
-// @name         Term PTT Custom Theme
-// @description  https://github.com/VdustR/term-ptt-custom-theme
-// @version      0.0.0
-// @match        https://term.ptt.cc/
-// ==/UserScript==
+設定會儲存在 Chrome extension storage。這個 extension 不會上傳瀏覽紀錄、PTT 內容、帳號資料或使用者輸入內容。
 
-(function () {
-  "use strict";
-  function addCss(href) {
-    const link = document.createElement("link");
-    link.setAttribute("rel", "stylesheet");
-    link.setAttribute("href", href);
-    document.body.appendChild(link);
-  }
-  function setColor(color) {
-    const style = document.createElement("style");
-    style.innerText = `:root {${Object.entries(color)
-      .map(([key, value]) => `--term-color-${key}: ${value};`)
-      .join("")}}`.replace(/[\s\n]/g, "");
-    document.body.appendChild(style);
-  }
-  addCss("https://cdn.jsdelivr.net/gh/vdustr/term-ptt-custom-theme/color.css");
-  // SolarizedDark for example.
-  setColor({
-    black: "#073642",
-    maroon: "#dc322f",
-    green: "#859900",
-    olive: "#cf9a6b",
-    navy: "#268bd2",
-    purple: "#d33682",
-    teal: "#2aa198",
-    silver: "#eee8d5",
-    grey: "#657b83",
-    red: "#d87979",
-    "0f0": "#88cf76",
-    ff0: "#657b83",
-    "00f": "#2699ff",
-    f0f: "#d33682",
-    "0ff": "#43b8c3",
-    fff: "#fdf6e3",
-  });
-})();
+## 字型
+
+`term.ptt.cc` 本身已經有字型 family 設定，所以這個 extension 不直接套用 `font-family`。
+
+如果想在 `term.ptt.cc` 使用自己喜歡的字型，可以搭配 [`VdustR/ptt-font-tool`](https://github.com/VdustR/ptt-font-tool) 製作適合 PTT cell 寬度的字型。完成後可以用本 extension 的 WebFont Tags 載入 webfont，再到 `term.ptt.cc` 內建設定中選擇該字型 family。
+
+## 開發
+
+安裝依賴：
+
+```bash
+pnpm install
 ```
 
-## Useful Links
+產生 colors、extension icons、extension assets 與 store assets：
 
-### Gogh
-
-> Color Scheme for Gnome Terminal, Pantheon Terminal, Tilix, and XFCE4 Terminal
->
-> Color Schemes For Ubuntu, Linux Mint, Elementary OS and all distributions that use Gnome Terminal, Pantheon Terminal, Tilix, or XFCE4 Terminal; initially inspired by Elementary OS Luna. Also works on iTerm for macOS.
-
-- [Gogh](https://mayccoll.github.io/Gogh/)
-
-```js
-// ==UserScript==
-// @name         PTT Gogh Themes
-// @description  https://github.com/VdustR/term-ptt-custom-theme
-// @version      0.0.0
-// @match        https://term.ptt.cc/
-// ==/UserScript==
-
-(async function () {
-  "use strict";
-  function addCss(href) {
-    const link = document.createElement("link");
-    link.setAttribute("rel", "stylesheet");
-    link.setAttribute("href", href);
-    document.body.appendChild(link);
-  }
-  function setColor(color) {
-    const style = document.createElement("style");
-    style.innerText = `:root {${Object.entries(color)
-      .map(([key, value]) => `--term-color-${key}: ${value};`)
-      .join("")}}`.replace(/[\s\n]/g, "");
-    document.body.appendChild(style);
-  }
-  async function setGoghTheme(themeName) {
-    const { themes } = await (
-      await fetch("https://cdn.jsdelivr.net/gh/Mayccoll/Gogh/data/themes.json")
-    ).json();
-    const theme = themes.find(({ name }) => name === themeName);
-    if (!theme) throw new Error(`Theme ${themeName} not found`);
-    setColor({
-      // black: theme.background,
-      black: theme.black,
-      maroon: theme.red,
-      green: theme.green,
-      olive: theme.yellow,
-      navy: theme.blue,
-      purple: theme.purple,
-      teal: theme.cyan,
-      silver: theme.white,
-      grey: theme.brightBlack,
-      red: theme.brightRed,
-      "0f0": theme.brightGreen,
-      ff0: theme.brightYellow,
-      "00f": theme.brightBlue,
-      f0f: theme.brightPurple,
-      "0ff": theme.brightCyan,
-      fff: theme.brightWhite,
-    });
-  }
-  addCss("https://cdn.jsdelivr.net/gh/vdustr/term-ptt-custom-theme/color.css");
-  // Replace with the theme name you want
-  await setGoghTheme("Grape");
-})();
+```bash
+pnpm build
 ```
 
-### Themes Based on term-ptt-custom-theme
+跑完整驗證：
 
-- [Retro](https://github.com/VdustR/term-ptt-retro-theme)
+```bash
+pnpm verify
+```
 
-## Chrome Extension
+`pnpm verify` 會執行 build、test、extension package、package verifier 與 release preflight。
 
-This repository includes a Manifest V3 extension for terminal colors and optional webfont tags on `term.ptt.cc`.
+## Colors Registry
 
-### Colors Registry
-
-The generated colors registry is based on [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes).
+colors registry 來源是 [`mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes)。
 Third-party source notices are tracked in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
-Clone that repository next to this repository:
+Clone upstream repository next to this repository:
 
 ```bash
 git clone https://github.com/mbadolato/iTerm2-Color-Schemes.git ../iTerm2-Color-Schemes
@@ -152,17 +71,23 @@ By default, the importer reads `../iTerm2-Color-Schemes/windowsterminal`. Overri
 ITERM2_COLOR_SCHEMES_DIR=vendor/iTerm2-Color-Schemes/windowsterminal pnpm import:colors
 ```
 
-The generated registry is written to `data/colors.json` and copied into extension assets by:
+The generated registry is written to `data/colors.json` and copied into extension assets by `pnpm build`.
 
-```bash
-pnpm build
-```
+## Extension Development
 
-Run the full local verification gate:
+Load the unpacked extension from the `extension/` directory in `chrome://extensions`.
 
-```bash
-pnpm verify
-```
+The extension package:
+
+- Injects `assets/color.css` on `https://term.ptt.cc/*`.
+- Loads `assets/colors.json`.
+- Previews selected color schemes and allowed webfont tags on the current `term.ptt.cc` tab.
+- Persists the selected color scheme and webfont tags with `chrome.storage.sync` after Apply.
+- Generates PNG extension icons during `pnpm build`.
+
+WebFont Tags is an advanced feature. Paste only style tags and links you trust. Script, iframe, image, arbitrary HTML tags, non-HTTPS links, and event handler attributes are rejected.
+
+## Packaging
 
 Run only the release artifact preflight after packaging:
 
@@ -170,9 +95,7 @@ Run only the release artifact preflight after packaging:
 pnpm preflight:release
 ```
 
-The packaging step requires the system `zip` command. On macOS and Linux this is
-usually available by default; on Windows, run the package step from WSL, Git Bash
-with `zip` installed, or the GitHub Actions artifact.
+The packaging step requires the system `zip` command. On macOS and Linux this is usually available by default; on Windows, run the package step from WSL, Git Bash with `zip` installed, or the GitHub Actions artifact.
 
 Package the extension zip for manual testing or Chrome Web Store upload:
 
@@ -185,26 +108,6 @@ The package is written to `dist/term-ptt-custom-theme.zip`.
 Chrome Web Store listing, privacy, permission, asset, and reviewer test notes are in [`docs/chrome-web-store-submission.md`](docs/chrome-web-store-submission.md).
 Manual release validation steps are tracked in [`docs/manual-qa.md`](docs/manual-qa.md).
 The Chrome Web Store privacy policy text is tracked in [`PRIVACY.md`](PRIVACY.md).
-
-### Extension Development
-
-Load the unpacked extension from the `extension/` directory in `chrome://extensions`.
-
-The extension:
-
-- Injects `assets/color.css` on `https://term.ptt.cc/*`.
-- Loads `assets/colors.json`.
-- Previews selected color schemes and allowed webfont tags on the current `term.ptt.cc` tab.
-- Persists the selected color scheme and webfont tags with `chrome.storage.sync` after Apply.
-- Generates PNG extension icons during `pnpm build`.
-
-Webfont tags load user-supplied style resources through HTTPS stylesheets, inline CSS, preconnect hints, or style/font preloads. This advanced field can change the `term.ptt.cc` page, so paste only style tags and links you trust. The extension does not apply `font-family`; choose loaded font families in `term.ptt.cc` settings when using webfonts. Script, iframe, image, arbitrary HTML tags, non-HTTPS links, and event handler attributes are rejected.
-
-### Current Limits
-
-- Colors are implemented from the generated iTerm2 registry.
-- Packs are intentionally out of scope.
-- Chrome Web Store screenshots currently use the original public custom-theme and retro-theme samples; review them before submission.
 
 ## License
 

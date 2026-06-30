@@ -47,7 +47,7 @@ Term PTT Custom Theme
 
 ### Short Description
 
-在 term.ptt.cc 預覽並套用終端機配色，可選擇載入自訂 style/webfont。
+自訂 term.ptt.cc 的終端機配色風格，並可載入自己的 style/webfont。
 
 ### Detailed Description
 
