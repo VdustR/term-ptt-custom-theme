@@ -1169,7 +1169,9 @@ function postPreviewMessageAndWait(message, expectedTypes, { timeoutMs = APPLY_A
       if (port === targetPort) {
         port = null;
       }
-      setLivePageUnavailableStatus();
+      if (updateStatusOnTimeout) {
+        setLivePageUnavailableStatus();
+      }
       finish(false);
     }
   });
