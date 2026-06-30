@@ -18,7 +18,7 @@ Chrome Web Store submission requires a registered CWS developer account and a on
 
 - Zip file: `dist/term-ptt-custom-theme.zip`
 - Manifest name: `Term PTT Custom Theme`
-- Manifest version: `0.1.0`
+- Manifest version: `0.2.0`
 
 Build before upload:
 
@@ -51,21 +51,46 @@ Term PTT Custom Theme
 
 ### Detailed Description
 
-Term PTT Custom Theme 是給 `term.ptt.cc` 使用的外觀調整工具。
+Term PTT Custom Theme 是專為 `term.ptt.cc` 設計的外觀自訂工具，讓 PTT 網頁版可以使用更接近終端機的配色風格。
 
-你可以在 extension popup 裡瀏覽終端機配色 presets，並加入 advanced style tags 來載入自己的 CSS 或 webfont 資源。所有變更都會直接在目前的 `term.ptt.cc` 分頁即時預覽。確認效果後按下 Apply，之後重新開啟 PTT 時會自動套用同一組設定。
+你可以在 extension popup 裡瀏覽多組 terminal color presets，直接套用到目前的 `term.ptt.cc` 分頁。選到喜歡的配色後，也可以進一步微調背景、前景、cursor、selection 與 ANSI 色票，讓畫面更符合自己的閱讀習慣。
 
-目前支援：
+如果想搭配自己的 webfont 或 CSS，也可以使用 WebFont Tags 載入 HTTPS stylesheet、inline CSS、preconnect、style preload 或 font preload。字型 family 的選擇仍使用 `term.ptt.cc` 內建設定完成；如果需要把自己喜歡的字型調整成更適合 PTT cell 寬度的版本，可以搭配 `VdustR/ptt-font-tool` 使用。
 
-- 從 `mbadolato/iTerm2-Color-Schemes` 轉換而來的多組終端機 colors。
-- 自訂 advanced style tags，可用於 HTTPS stylesheets、inline CSS、preconnect、style preload 或 font preload。
-- 字型 family 的選用使用 `term.ptt.cc` 內建字型設定完成。
-- 套用前 live preview。
-- `Term PTT Default` 可回到 `term.ptt.cc` 原始外觀。
+主要功能：
 
-Extension 只在 `https://term.ptt.cc/*` 執行，設定儲存在 Chrome extension storage，不會上傳你的瀏覽紀錄、帳號資料或 PTT 內容。
+- 瀏覽並套用多組終端機配色 presets。
+- 自訂背景、前景、cursor、selection 與 ANSI 色票。
+- 套用前可直接在目前的 `term.ptt.cc` 分頁即時預覽並確認效果。
+- 支援 WebFont Tags 載入自訂 style/webfont 資源。
+- 在非 `term.ptt.cc` 頁面點擊 extension 時，可切換到既有的 `term.ptt.cc` 分頁；沒有分頁時會開啟新的 `term.ptt.cc`。
+- 使用 `Term PTT Default` 回到 `term.ptt.cc` 原始外觀。
 
-Third-party source notices are tracked in `THIRD_PARTY_NOTICES.md`.
+開源資訊：
+
+Term PTT Custom Theme 是開源專案，採用 MIT License。
+
+Source code:
+
+```text
+https://github.com/VdustR/term-ptt-custom-theme
+```
+
+PTT font tool:
+
+```text
+https://github.com/VdustR/ptt-font-tool
+```
+
+Color presets 主要來自 `mbadolato/iTerm2-Color-Schemes`：
+
+```text
+https://github.com/mbadolato/iTerm2-Color-Schemes
+```
+
+隱私與資料：
+
+Term PTT Custom Theme 只在 `https://term.ptt.cc/*` 執行。設定儲存在 Chrome extension storage，不會上傳瀏覽紀錄、PTT 內容、帳號資料或使用者輸入內容。所有自訂 style/webfont tags 都由使用者自行提供，請只貼上你信任的資源。
 
 ## Reviewer Reference
 
@@ -91,7 +116,7 @@ Allows the content script and stylesheet to run only on `term.ptt.cc`, where the
 
 No remote JavaScript or WebAssembly is executed by the extension.
 
-The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided advanced style tags are restricted to `<style>` tags and HTTPS style/font-related `<link>` tags. This advanced field can change the `term.ptt.cc` page, so users should paste only style tags and links they trust. Script, arbitrary HTML tags, event handler attributes, and non-HTTPS links are rejected.
+The extension package contains the JavaScript, CSS, icons, and color registry it runs. User-provided WebFont Tags are restricted to `<style>` tags and HTTPS style/font-related `<link>` tags. This advanced field can change the `term.ptt.cc` page, so users should paste only style tags and links they trust. Script, arbitrary HTML tags, event handler attributes, and non-HTTPS links are rejected.
 
 ## Data Use
 
@@ -108,7 +133,7 @@ Use the public repository URL for `PRIVACY.md` as the Chrome Web Store privacy p
 Stored data is limited to:
 
 - Selected color scheme id, name, base preset id, and color values.
-- Optional custom style tags entered by the user.
+- Optional custom style/webfont tags entered by the user.
 
 The popup reads the active tab URL to decide whether preview is available on `term.ptt.cc`. The extension does not send browsing activity, terminal content, account data, or page contents to a server controlled by this project.
 
@@ -134,7 +159,7 @@ No credentials are required.
 2. Open `https://term.ptt.cc/`.
 3. Open the extension popup.
 4. Select a color preset.
-5. Add an inline style, stylesheet `link`, or style/font preload `link` tag.
+5. Add an inline style, stylesheet `link`, or style/font preload `link` tag in WebFont Tags.
 6. Confirm that preview changes the active `term.ptt.cc` tab before saving.
 7. Click Apply.
 8. Reload `term.ptt.cc` and confirm the selected appearance is restored.

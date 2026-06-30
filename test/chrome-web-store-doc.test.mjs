@@ -17,8 +17,8 @@ test("Chrome Web Store submission guide covers listing, privacy, and review fiel
   assert.match(doc, /自訂 term\.ptt\.cc 的終端機配色風格，並可載入自己的 style\/webfont。/);
   assert.match(doc, /即時預覽/);
   assert.match(doc, /Term PTT Default/);
-  assert.match(doc, /自訂 advanced style tags/);
-  assert.match(doc, /不會上傳你的瀏覽紀錄、帳號資料或 PTT 內容/);
+  assert.match(doc, /支援 WebFont Tags 載入自訂 style\/webfont 資源/);
+  assert.match(doc, /不會上傳瀏覽紀錄、PTT 內容、帳號資料或使用者輸入內容/);
   assert.match(doc, /Reviewer Reference/);
   assert.match(doc, /Single Purpose/);
   assert.match(doc, /Customize terminal colors and optional custom style loading on term\.ptt\.cc/);
@@ -33,7 +33,7 @@ test("Chrome Web Store submission guide covers listing, privacy, and review fiel
   assert.match(doc, /Data Use/);
   assert.match(doc, /does not collect, sell, or share user data/);
   assert.match(doc, /Selected color scheme id, name, base preset id, and color values/);
-  assert.match(doc, /Optional custom style tags entered by the user/);
+  assert.match(doc, /Optional custom style\/webfont tags entered by the user/);
   assert.match(doc, /PRIVACY\.md/);
   assert.match(doc, /Store Listing Assets/);
   assert.match(doc, /1280x800 or 640x400/);
