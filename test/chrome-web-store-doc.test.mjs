@@ -14,7 +14,7 @@ test("Chrome Web Store submission guide covers listing, privacy, and review fiel
   assert.match(doc, /chrome-web-store-assets/);
   assert.match(doc, /Public Store Listing Copy/);
   assert.match(doc, /Chinese \(Traditional\)/);
-  assert.match(doc, /在 term\.ptt\.cc 預覽並套用終端機配色，可選擇載入自訂 style\/webfont。/);
+  assert.match(doc, /自訂 term\.ptt\.cc 的終端機配色風格，並可載入自己的 style\/webfont。/);
   assert.match(doc, /即時預覽/);
   assert.match(doc, /Term PTT Default/);
   assert.match(doc, /自訂 advanced style tags/);
