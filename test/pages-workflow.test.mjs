@@ -152,6 +152,8 @@ test("extension popup browses colors and webfont tags inside the extension", asy
   assert.match(popupJs, /applyButton\.disabled = true;/);
   assert.match(popupJs, /await sendSelectedAppearanceApply\(\)/);
   assert.match(popupJs, /window\.close\(\);/);
+  assert.match(popupJs, /applyButton\.disabled = false;/);
+  assert.match(popupJs, /Promise\.all\(\[/);
   assert.match(popupJs, /sendPreviewMessageAndWait/);
   assert.match(popupJs, /APPLY_ACK_TIMEOUT_MS/);
   assert.match(popupJs, /selectedScheme: storedScheme/);

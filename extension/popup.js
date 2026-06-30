@@ -646,6 +646,8 @@ async function applySelectedPreset() {
     : `Applied ${selectedPreset.name}`;
   if (await sendSelectedAppearanceApply()) {
     window.close();
+  } else {
+    applyButton.disabled = false;
   }
 }
 
@@ -679,8 +681,10 @@ function sendSelectedWebfontTagsPreview() {
 }
 
 async function sendSelectedAppearanceApply() {
-  const schemeApplied = await sendSelectedSchemeApply();
-  const webfontTagsApplied = await sendSelectedWebfontTagsApply();
+  const [schemeApplied, webfontTagsApplied] = await Promise.all([
+    sendSelectedSchemeApply(),
+    sendSelectedWebfontTagsApply(),
+  ]);
   return schemeApplied && webfontTagsApplied;
 }
 
