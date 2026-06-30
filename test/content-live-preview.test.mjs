@@ -86,8 +86,14 @@ const previewScheme = {
   name: "Preview",
   scheme: {
     ...savedScheme,
-    black: "#111111",
+    black: "#45475a",
     brightWhite: "#eeeeee",
+  },
+  metadata: {
+    background: "#1e1e2e",
+    foreground: "#cdd6f4",
+    cursor: "#f5e0dc",
+    selection: "#585b70",
   },
 };
 
@@ -99,6 +105,15 @@ const savedWebfontTags = `<style>${savedWebfontStyleText}</style>`;
 const previewWebfontTags =
   `<style>${previewWebfontStyleText}</style><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`;
 
+test("content script responds to preview readiness pings", async () => {
+  const harness = await loadContentHarness();
+  const port = harness.connect();
+
+  port.send({ type: "ping" });
+
+  assert.deepEqual(toPlainObject(port.messages), [{ type: "preview-ready" }]);
+});
+
 test("content script loads saved scheme and webfont tags from storage", async () => {
   const harness = await loadContentHarness({
     selectedScheme: {
@@ -106,11 +121,19 @@ test("content script loads saved scheme and webfont tags from storage", async ()
       name: "Saved",
       basePresetId: "saved",
       scheme: savedScheme,
+      metadata: {
+        background: "#101010",
+        foreground: "#f0f0f0",
+        cursor: "#ffff00",
+        selection: "#333333",
+      },
     },
     selectedWebfontTags: savedWebfontTags,
   });
 
-  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-background:#101010/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#101010/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-cursor:#ffff00/);
   assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 });
 
@@ -129,6 +152,12 @@ test("content script previews scheme and webfont tags, then restores saved appea
       name: "Saved",
       basePresetId: "saved",
       scheme: savedScheme,
+      metadata: {
+        background: "#101010",
+        foreground: "#f0f0f0",
+        cursor: "#ffff00",
+        selection: "#333333",
+      },
     },
     selectedWebfontTags: savedWebfontTags,
   });
@@ -137,7 +166,9 @@ test("content script previews scheme and webfont tags, then restores saved appea
   port.send({ type: "preview-scheme", preset: previewScheme });
   port.send({ type: "preview-webfont-tags", tags: previewWebfontTags });
 
-  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#111111/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-background:#1e1e2e/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#1e1e2e/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-selection:#585b70/);
   assert.deepEqual(harness.webfontTexts(), [previewWebfontStyleText, ""]);
   assert.deepEqual(harness.webfontLinks(), [
     {
@@ -153,7 +184,8 @@ test("content script previews scheme and webfont tags, then restores saved appea
 
   port.disconnect();
 
-  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-background:#101010/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#101010/);
   assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 });
 
@@ -164,6 +196,12 @@ test("content script previews and applies Term PTT Default by clearing styles", 
       name: "Saved",
       basePresetId: "saved",
       scheme: savedScheme,
+      metadata: {
+        background: "#101010",
+        foreground: "#f0f0f0",
+        cursor: "#ffff00",
+        selection: "#333333",
+      },
     },
     selectedWebfontTags: savedWebfontTags,
   });
@@ -181,7 +219,8 @@ test("content script previews and applies Term PTT Default by clearing styles", 
 
   previewPort.disconnect();
 
-  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#000000/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-background:#101010/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#101010/);
   assert.deepEqual(harness.webfontTexts(), [savedWebfontStyleText]);
 
   const applyPort = harness.connect();
@@ -205,7 +244,8 @@ test("content script keeps applied appearance after popup disconnects", async ()
   port.send({ type: "apply-webfont-tags", tags: previewWebfontTags });
   port.disconnect();
 
-  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#111111/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-background:#1e1e2e/);
+  assert.match(harness.styleText("term-ptt-custom-theme-colors-active"), /--term-color-black:#1e1e2e/);
   assert.deepEqual(harness.webfontTexts(), [previewWebfontStyleText, ""]);
 });
 

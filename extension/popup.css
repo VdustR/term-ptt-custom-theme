@@ -348,7 +348,29 @@ p {
 
 .palette-strip {
   display: grid;
-  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.palette-group {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.palette-group-label {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette-group-swatches {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 4px;
 }
 
@@ -480,51 +502,45 @@ p {
 }
 
 .preset-preview-samples {
-  display: flex;
+  display: grid;
   min-width: 0;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.ptt-color-sample-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 34px repeat(8, minmax(0, 1fr));
   align-items: center;
-  gap: 5px;
-  overflow: hidden;
-  font-size: 10px;
-  line-height: 1.25;
-  white-space: nowrap;
+  gap: 2px;
 }
 
 .ptt-color-sample-label {
   display: inline-grid;
-  flex: 0 0 auto;
-  min-height: 1.35em;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, currentColor 34%, transparent);
-  border-radius: 2px;
-  font-weight: 800;
-}
-
-.ptt-color-sample-group {
-  display: inline-flex;
-  flex: 0 0 auto;
   min-width: 0;
-  align-items: center;
-  gap: 1px;
-}
-
-.ptt-color-sample-label {
-  padding: 0 3px;
-  color: color-mix(in srgb, currentColor 84%, transparent);
-  background: color-mix(in srgb, currentColor 7%, transparent);
+  min-height: 1.55em;
+  place-items: center;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, currentColor 42%, transparent);
+  color: color-mix(in srgb, currentColor 80%, transparent);
+  font-weight: 900;
+  text-overflow: clip;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
 }
 
 .ptt-color-sample {
   display: inline-grid;
-  flex: 0 0 auto;
-  width: 1.55em;
-  height: 1.45em;
+  min-width: 0;
+  min-height: 1.55em;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 1px;
-  font-size: 9px;
-  font-weight: 800;
+  border: 0;
+  font-size: 12px;
+  font-weight: 900;
   line-height: 1;
 }
 

@@ -53,13 +53,46 @@ test("extension color utility maps ANSI schemes to term.ptt CSS color keys", asy
   });
 });
 
+test("extension color utility maps PTT black to terminal background when available", async () => {
+  const { schemeToPttColors } = await loadExtensionColorUtils();
+
+  assert.equal(
+    schemeToPttColors({ ...ansiScheme, black: "#45475a" }, { background: "#1e1e2e" }).black,
+    "#1e1e2e",
+  );
+});
+
 test("extension color utility serializes ANSI schemes to term.ptt CSS variables", async () => {
   const { schemeToCssVariables } = await loadExtensionColorUtils();
 
   assert.equal(
     schemeToCssVariables(ansiScheme),
-    ":root{--term-color-black:#000000;--term-color-maroon:#800000;--term-color-green:#008000;--term-color-olive:#808000;--term-color-navy:#000080;--term-color-purple:#800080;--term-color-teal:#008080;--term-color-silver:#c0c0c0;--term-color-grey:#808080;--term-color-red:#ff0000;--term-color-0f0:#00ff00;--term-color-ff0:#ffff00;--term-color-00f:#0000ff;--term-color-f0f:#ff00ff;--term-color-0ff:#00ffff;--term-color-fff:#ffffff;}",
+    ":root{--term-color-background:#000000;--term-color-foreground:#ffffff;--term-color-cursor:#ffffff;--term-color-selection:#808080;--term-color-black:#000000;--term-color-maroon:#800000;--term-color-green:#008000;--term-color-olive:#808000;--term-color-navy:#000080;--term-color-purple:#800080;--term-color-teal:#008080;--term-color-silver:#c0c0c0;--term-color-grey:#808080;--term-color-red:#ff0000;--term-color-0f0:#00ff00;--term-color-ff0:#ffff00;--term-color-00f:#0000ff;--term-color-f0f:#ff00ff;--term-color-0ff:#00ffff;--term-color-fff:#ffffff;}",
   );
+});
+
+test("extension color utility emits terminal metadata and maps PTT black to background", async () => {
+  const { schemeToCssVariables, schemeToTerminalColors } = await loadExtensionColorUtils();
+  const catppuccinLikeMetadata = {
+    background: "#1e1e2e",
+    foreground: "#cdd6f4",
+    cursor: "#f5e0dc",
+    selection: "#585b70",
+  };
+
+  assert.deepEqual(
+    { ...schemeToTerminalColors(ansiScheme, catppuccinLikeMetadata) },
+    catppuccinLikeMetadata,
+  );
+  const css = schemeToCssVariables(
+    { ...ansiScheme, black: "#45475a" },
+    catppuccinLikeMetadata,
+  );
+
+  assert.match(css, /--term-color-background:#1e1e2e;/);
+  assert.match(css, /--term-color-black:#1e1e2e;/);
+  assert.match(css, /--term-color-cursor:#f5e0dc;/);
+  assert.match(css, /--term-color-selection:#585b70;/);
 });
 
 test("extension color utility rejects missing ANSI scheme keys", async () => {
@@ -101,8 +134,11 @@ test("extension color utility rejects invalid color values", async () => {
 test("shared color stylesheet has priority over term.ptt.cc page styles", async () => {
   const css = await readFile("extension/assets/color.css", "utf8");
 
-  assert.match(css, /body\s*\{[^}]*background-color: var\(--term-color-black\) !important/s);
-  assert.match(css, /\.main\s*\{[^}]*background-color: var\(--term-color-black\) !important/s);
+  assert.match(css, /body\s*\{[^}]*color: var\(--term-color-foreground\) !important/s);
+  assert.match(css, /body\s*\{[^}]*background-color: var\(--term-color-background\) !important/s);
+  assert.match(css, /\.main\s*\{[^}]*background-color: var\(--term-color-background\) !important/s);
+  assert.match(css, /#cursor\s*\{[^}]*color: var\(--term-color-cursor\) !important/s);
+  assert.match(css, /::selection,[^{]*\{[^}]*background-color: var\(--term-color-selection\) !important/s);
   assert.match(css, /\.q1\s*\{[^}]*color: var\(--term-color-maroon\) !important/s);
   assert.match(css, /\.b1\s*\{[^}]*background-color: var\(--term-color-maroon\) !important/s);
 });
