@@ -27,32 +27,70 @@
       </header>
 
       <section id="controls" class="controls" hidden>
-        <section class="current-palette" aria-labelledby="currentPaletteHeading">
-          <div class="palette-header">
-            <div class="palette-title">
-              <span id="currentPaletteHeading">Current Palette</span>
-              <strong id="currentPaletteName">Loading...</strong>
+        <section id="homePage" class="popup-page home-page" aria-label="Appearance overview">
+          <section class="current-palette" aria-labelledby="currentPaletteHeading">
+            <div class="palette-header">
+              <div class="palette-title">
+                <span id="currentPaletteHeading">Current Palette</span>
+                <strong id="currentPaletteName">Loading...</strong>
+              </div>
+              <div class="palette-state">
+                <span id="modifiedBadge" class="modified-badge" hidden>Modified</span>
+                <button id="resetButton" class="inline-reset" type="button" hidden>Reset</button>
+              </div>
             </div>
-            <div class="palette-state">
-              <span id="modifiedBadge" class="modified-badge" hidden>Modified</span>
-              <button id="resetButton" class="inline-reset" type="button" hidden>Reset</button>
-            </div>
-          </div>
-          <div id="paletteStrip" class="palette-strip" aria-label="Current palette colors"></div>
+            <div id="paletteStrip" class="palette-strip" aria-label="Current palette colors"></div>
+          </section>
+
+          <nav class="home-nav" aria-label="Appearance sections">
+            <button id="openPresetsButton" class="page-link-button" type="button">
+              <span class="page-link-copy">
+                <strong>Color Presets</strong>
+                <small id="selectedPresetSummary">Choose terminal colors</small>
+              </span>
+              <span class="page-link-arrow" aria-hidden="true">›</span>
+            </button>
+
+            <button id="openHtmlButton" class="page-link-button" type="button">
+              <span class="page-link-copy">
+                <strong>Inject HTML</strong>
+                <small id="webfontTagsSummary">Optional</small>
+              </span>
+              <span class="page-link-arrow" aria-hidden="true">›</span>
+            </button>
+          </nav>
         </section>
 
-        <label class="search">
-          <span>Search Presets</span>
-          <input id="searchInput" type="search" autocomplete="off" placeholder="Gruvbox, Solarized, Dracula">
-        </label>
+        <section id="presetsPage" class="popup-page presets-page" aria-label="Color presets" hidden>
+          <div class="page-heading">
+            <button id="backFromPresetsButton" class="back-button" type="button" aria-label="Back to appearance overview">
+              ‹
+            </button>
+            <div>
+              <h2>Color Presets</h2>
+              <p id="presetResultStatus">Search terminal palettes</p>
+            </div>
+          </div>
 
-        <div id="colorList" class="color-list" aria-label="Color presets"></div>
+          <label class="search">
+            <span>Search Presets</span>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Gruvbox, Solarized, Dracula">
+          </label>
 
-        <details id="webfontTagsPanel" class="webfont-tags">
-          <summary>
-            <span>Webfont Tags</span>
-            <small id="webfontTagsSummary">Optional</small>
-          </summary>
+          <div id="colorList" class="color-list" aria-label="Color presets"></div>
+        </section>
+
+        <section id="injectHtmlPage" class="popup-page inject-html-page" aria-label="Inject HTML" hidden>
+          <div class="page-heading">
+            <button id="backFromHtmlButton" class="back-button" type="button" aria-label="Back to appearance overview">
+              ‹
+            </button>
+            <div>
+              <h2>Inject HTML</h2>
+              <p>Paste trusted style tags or stylesheet links.</p>
+            </div>
+          </div>
+
           <div class="webfont-tags-body">
             <textarea
               id="webfontTagsInput"
@@ -82,7 +120,7 @@
               Advanced: custom CSS can change term.ptt.cc. Paste only style tags and links you trust.
             </small>
           </div>
-        </details>
+        </section>
 
         <footer class="actions">
           <button id="applyButton" type="button" disabled>Apply</button>
