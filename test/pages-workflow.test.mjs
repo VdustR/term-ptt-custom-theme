@@ -141,6 +141,10 @@ test("extension popup browses colors and inject HTML inside focused pages", asyn
   assert.match(popupJs, /function showPage\(page\)/);
   assert.match(popupJs, /document\.documentElement\.dataset\.page = page;/);
   assert.match(popupJs, /homePage\.hidden = page !== PAGE_HOME;/);
+  assert.match(popupJs, /if \(page === PAGE_HOME\) \{\s*forcePopupHeightReflow\(\);/s);
+  assert.match(popupJs, /function forcePopupHeightReflow\(\)/);
+  assert.match(popupJs, /document\.documentElement\.style\.height = "1px";/);
+  assert.match(popupJs, /requestAnimationFrame\(\(\) => \{/);
   assert.match(popupJs, /chrome\.tabs\.create\(\{ url: REPOSITORY_URL, active: true \}\)/);
   assert.match(popupCss, /\.header\s*{[^}]*align-items:\s*center;/s);
   assert.match(popupCss, /\.repository-button\s*{[^}]*padding:\s*0;/s);
@@ -346,7 +350,13 @@ test("extension popup virtualizes preset scrolling and resets search results to 
   assert.match(popupJs, /function scoreSearchTerm\(field, term\)/);
   assert.match(popupJs, /function fuzzyScoreWord\(word, term\)/);
   assert.match(popupJs, /function renderPresetViewport\(\)/);
+  assert.match(popupJs, /let presetRenderVersion = 0;/);
+  assert.match(popupJs, /let lastPresetRenderVersion = -1;/);
+  assert.match(popupJs, /presetRenderVersion \+= 1;/);
   assert.match(popupJs, /const viewportHeight = presetMatches\.length \* PRESET_ROW_HEIGHT;/);
+  assert.match(popupJs, /presetRenderVersion === lastPresetRenderVersion/);
+  assert.match(popupJs, /visibleStart === lastVisiblePresetStart/);
+  assert.match(popupJs, /return;\s*\}\s*lastPresetRenderVersion = presetRenderVersion;/s);
   assert.match(popupJs, /viewport\.style\.height = `\$\{viewportHeight\}px`;/);
   assert.match(popupJs, /button\.style\.transform = `translateY\(\$\{index \* PRESET_ROW_HEIGHT\}px\)`;/);
   assert.match(popupJs, /if \(resetScroll \|\| queryChanged\) \{\s*colorListNode\.scrollTop = 0;/s);

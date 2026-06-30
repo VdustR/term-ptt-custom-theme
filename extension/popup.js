@@ -189,6 +189,10 @@ let presetMatches = [];
 let lastPresetQuery = null;
 let presetSearchTimeout = null;
 let presetScrollFrame = null;
+let presetRenderVersion = 0;
+let lastPresetRenderVersion = -1;
+let lastVisiblePresetStart = -1;
+let lastVisiblePresetEnd = -1;
 let persistDraftTimeout = null;
 let webfontPreviewTimeout = null;
 let previewPortPromise = null;
@@ -329,7 +333,24 @@ function showPage(page) {
 
   if (page === PAGE_INJECT_HTML) {
     webfontTagsInput.focus();
+    return;
   }
+
+  if (page === PAGE_HOME) {
+    forcePopupHeightReflow();
+  }
+}
+
+function forcePopupHeightReflow() {
+  const previousHtmlHeight = document.documentElement.style.height;
+  const previousBodyHeight = document.body.style.height;
+  document.documentElement.style.height = "1px";
+  document.body.style.height = "1px";
+
+  requestAnimationFrame(() => {
+    document.documentElement.style.height = previousHtmlHeight;
+    document.body.style.height = previousBodyHeight;
+  });
 }
 
 function schedulePresetSearch() {
@@ -454,6 +475,7 @@ function renderPresetResults({ resetScroll = false, scrollSelected = false } = {
   const queryChanged = query !== lastPresetQuery;
   lastPresetQuery = query;
   presetMatches = findPresetMatches(query);
+  presetRenderVersion += 1;
 
   if (resetScroll || queryChanged) {
     colorListNode.scrollTop = 0;
@@ -572,6 +594,18 @@ function schedulePresetViewportRender() {
 
 function renderPresetViewport() {
   if (presetMatches.length === 0) {
+    if (
+      presetRenderVersion === lastPresetRenderVersion &&
+      lastVisiblePresetStart === 0 &&
+      lastVisiblePresetEnd === 0
+    ) {
+      return;
+    }
+
+    lastPresetRenderVersion = presetRenderVersion;
+    lastVisiblePresetStart = 0;
+    lastVisiblePresetEnd = 0;
+
     const empty = document.createElement("div");
     empty.className = "color-list-empty";
     empty.textContent = "No presets found";
@@ -589,6 +623,19 @@ function renderPresetViewport() {
     Math.ceil((colorListNode.scrollTop + colorListNode.clientHeight) / PRESET_ROW_HEIGHT) +
       PRESET_OVERSCAN_ROWS,
   );
+
+  if (
+    presetRenderVersion === lastPresetRenderVersion &&
+    visibleStart === lastVisiblePresetStart &&
+    visibleEnd === lastVisiblePresetEnd
+  ) {
+    return;
+  }
+
+  lastPresetRenderVersion = presetRenderVersion;
+  lastVisiblePresetStart = visibleStart;
+  lastVisiblePresetEnd = visibleEnd;
+
   const viewport = document.createElement("div");
   viewport.className = "color-list-viewport";
   viewport.style.height = `${viewportHeight}px`;
