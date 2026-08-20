@@ -6,7 +6,7 @@
 
 範例：Goph Graph Theme 搭配 [jf open 粉圓](https://github.com/justfont/open-huninn-font)。
 
-![term-ptt-custom-theme](https://vdustr.dev/asset-2022/04-08-term-ptt-custom-theme/graph.png)
+![term-ptt-custom-theme](https://vdustr.github.io/asset-2022/04-08-term-ptt-custom-theme/graph.png)
 
 ## 功能
 
@@ -111,4 +111,4 @@ Chrome Web Store privacy policy 文字記錄在 [`PRIVACY.md`](PRIVACY.md)。
 
 ## 授權
 
-[MIT](https://github.com/VdustR/term-ptt-custom-theme/blob/main/LICENSE) © [ViPro](https://vdustr.dev).
+[MIT](https://github.com/VdustR/term-ptt-custom-theme/blob/main/LICENSE) © [ViPro](https://vdustr.github.io).
