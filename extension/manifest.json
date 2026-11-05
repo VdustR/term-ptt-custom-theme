@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Term PTT Custom Theme",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "自訂 term.ptt.cc 的終端機配色風格，並可載入自己的 style/webfont。",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,8 +9,13 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "scripting"],
-  "host_permissions": ["https://term.ptt.cc/*"],
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://term.ptt.cc/*"
+  ],
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
@@ -23,9 +28,27 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://term.ptt.cc/*"],
-      "css": ["assets/color.css"],
-      "js": ["ptt-colors.js", "ptt-webfont-tags.js", "content.js"],
+      "matches": [
+        "https://term.ptt.cc/*"
+      ],
+      "css": [
+        "assets/color.css"
+      ],
+      "js": [
+        "ptt-colors.js",
+        "ptt-webfont-tags.js",
+        "content.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://term.ptt.cc/*"
+      ],
+      "js": [
+        "native-colors.js"
+      ],
+      "world": "MAIN",
       "run_at": "document_start"
     }
   ]

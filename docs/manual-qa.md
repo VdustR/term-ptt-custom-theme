@@ -2,6 +2,9 @@
 
 Use this checklist before uploading a Chrome Web Store package.
 
+For Canvas and DOM renderer compatibility, also run the
+[focused renderer release check](renderer-compatibility.md#focused-release-check).
+
 ## Local Preflight
 
 - Run `pnpm verify`.

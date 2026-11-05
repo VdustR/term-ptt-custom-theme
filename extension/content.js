@@ -7,7 +7,29 @@ globalThis.__termPttCustomThemeContentLoaded = true;
 
 const STYLE_ID = "term-ptt-custom-theme-colors-active";
 
+let activeAppearance = null;
 let savedAppearance = null;
+
+function syncNativeColors() {
+  const appearance = activeAppearance;
+  let palette = null;
+  if (appearance) {
+    const terminal = TermPttColors.schemeToTerminalColors(appearance.scheme, appearance.metadata);
+    const colors = TermPttColors.schemeToPttColors(appearance.scheme, appearance.metadata);
+    palette = {
+      colors: ["black", "maroon", "green", "olive", "navy", "purple", "teal", "silver",
+        "grey", "red", "0f0", "ff0", "00f", "f0f", "0ff", "fff"].map((key) => colors[key]),
+      background: terminal.background,
+      foreground: terminal.foreground,
+      link: appearance.scheme.brightPurple,
+    };
+  }
+  document.dispatchEvent(new CustomEvent("term-ptt-custom-theme-palette", {
+    detail: JSON.stringify(palette),
+  }));
+}
+
+document.addEventListener("term-ptt-custom-theme-native-ready", syncNativeColors);
 let savedWebfontTags = "";
 let previewingScheme = false;
 let previewingWebfontTags = false;
@@ -21,9 +43,13 @@ function applyAppearance(appearance) {
     document.documentElement.appendChild(style);
   }
   style.textContent = TermPttColors.schemeToCssVariables(appearance.scheme, appearance.metadata);
+  activeAppearance = appearance;
+  syncNativeColors();
 }
 
 function clearScheme() {
+  activeAppearance = null;
+  syncNativeColors();
   document.getElementById(STYLE_ID)?.remove();
 }
 
