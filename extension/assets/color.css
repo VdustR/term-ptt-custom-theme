@@ -1,3 +1,5 @@
+/* Legacy DOM rendering needs class overrides; the modern renderer owns its palette. */
+@scope (:root:has(#term-ptt-custom-theme-colors-active):not([data-term-ptt-native-colors])) {
 :root {
   --term-color-background: var(--term-color-black);
   --term-color-foreground: var(--term-color-fff);
@@ -2369,4 +2371,16 @@ body {
 
 .trans-fix .b15 {
   box-shadow: inset 0 0 5px 5px var(--term-color-fff);
+}
+
+}
+
+@scope (:root[data-term-ptt-native-colors]) {
+  #cursor {
+    color: var(--term-color-cursor) !important;
+  }
+
+  ::selection {
+    background-color: var(--term-color-selection) !important;
+  }
 }

@@ -18,7 +18,7 @@ Chrome Web Store submission requires a registered CWS developer account and a on
 
 - Zip file: `dist/term-ptt-custom-theme.zip`
 - Manifest name: `Term PTT Custom Theme`
-- Manifest version: `0.2.0`
+- Manifest version: `0.2.1`
 
 Build before upload:
 
@@ -107,6 +107,11 @@ Stores the user's selected color scheme and optional custom style tags in Chrome
 ### `scripting`
 
 Injects the extension's packaged content scripts into an already-open `term.ptt.cc` tab when Chrome has not attached them yet, such as immediately after installing or updating the extension. This keeps live preview and Apply working without requiring a manual page reload.
+
+The packaged `native-colors.js` also runs in the page execution world to apply
+the site's in-memory color preferences to its Canvas and DOM renderers. Only
+validated color values cross this bridge; it does not read terminal content or
+write website settings to storage.
 
 ### `https://term.ptt.cc/*`
 

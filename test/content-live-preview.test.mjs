@@ -8,10 +8,18 @@ async function loadContentHarness(storageState = {}) {
   const webfontTagUtils = await readFile("extension/ptt-webfont-tags.js", "utf8");
   const contentScript = await readFile("extension/content.js", "utf8");
   const document = createFakeDocument();
+  const events = new EventTarget();
+  const nativePalettes = [];
+  events.addEventListener("term-ptt-custom-theme-palette", (event) => nativePalettes.push(JSON.parse(event.detail)));
+  document.addEventListener = events.addEventListener.bind(events);
+  document.dispatchEvent = events.dispatchEvent.bind(events);
   let connectListener = null;
 
   const context = {
     document,
+    CustomEvent: class extends Event {
+      constructor(type, options = {}) { super(type); this.detail = options.detail; }
+    },
     globalThis: null,
     chrome: {
       runtime: {
@@ -43,6 +51,8 @@ async function loadContentHarness(storageState = {}) {
 
   return {
     document,
+    nativePalettes,
+    nativeReady() { events.dispatchEvent(new Event("term-ptt-custom-theme-native-ready")); },
     connect(port = createFakePort()) {
       assert.equal(typeof connectListener, "function");
       connectListener(port);
@@ -355,3 +365,20 @@ function createFakePort() {
     },
   };
 }
+
+
+test("native renderer receives saved, preview, restored, and cleared palettes", async () => {
+  const harness = await loadContentHarness({ selectedScheme: previewScheme });
+  assert.equal(harness.nativePalettes.at(-1).background, "#1e1e2e");
+  assert.equal(harness.nativePalettes.at(-1).colors.length, 16);
+  const port = harness.connect();
+  port.send({ type: "preview-scheme", preset: { ...previewScheme, metadata: { background: "#123456" } } });
+  assert.equal(harness.nativePalettes.at(-1).background, "#123456");
+  harness.nativeReady();
+  assert.equal(harness.nativePalettes.at(-1).background, "#123456");
+  port.disconnect();
+  assert.equal(harness.nativePalettes.at(-1).background, "#1e1e2e");
+  const nextPort = harness.connect();
+  nextPort.send({ type: "apply-clear-scheme" });
+  assert.equal(harness.nativePalettes.at(-1), null);
+});

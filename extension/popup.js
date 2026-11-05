@@ -1487,6 +1487,11 @@ async function injectContentScripts() {
   try {
     await chrome.scripting.executeScript({
       target: { tabId: activeTab.id },
+      world: "MAIN",
+      files: ["native-colors.js"],
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
       files: CONTENT_SCRIPT_FILES,
     });
     return true;
